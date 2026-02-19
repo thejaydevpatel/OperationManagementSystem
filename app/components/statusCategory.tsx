@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react" // Added useMemo for sorting and useEffect
+import { useState } from "react" // Added useMemo for sorting and useEffect
 import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronUp, ChevronDown } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner";
+import { z } from "zod"
 import {
   Table,
   TableBody,
@@ -15,12 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useStatusCategory } from "@/app/Hooks/status-category"
+import { useStatusCategory } from "@/app/Hooks/UseStatusCategory"
 import {
   Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+  CardContent
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {
@@ -30,7 +30,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,104 +49,72 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+// ADD REACT HOOK FORM
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 
+// type FormData = {
+//   name: string
+//   description?: string
+//   isactive: boolean
+// }
+
+ //zod validation
+  const StatusCategoryFormData = z.object({
+      name: z.string().min(1, "This field is required").max(100, "Name max 100 chars"),
+      description: z.string().max(255, "Description max 255 chars").optional(),
+    isactive: z.boolean(),
+  })
+  
+  type StatusCategoryFormData = 
+    z.infer<typeof StatusCategoryFormData>
+  
 
 const StatusCategory = () => {
   const [open, setOpen] = useState(false)
-  const [sortBy, setSortBy] = useState<string>('id') // State for sorting column
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc') // State for sort order
-  const [searchTerm, setSearchTerm] = useState('') // State for search term
 
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const { setters, data, actions, ui, setEditingId  } = useStatusCategory()
+
+  // REACT HOOK FORM INITIALIZATION
   const {
-    name,
-    description,
-    isActive,
-    setName,
-    setDescription,
-    setIsActive,
-    setNameError,
-    handleSave,
-    handleEdit,
-    handleDelete,
-    loadCategories,
-    nameError,
-    editingId,
-    loading,
-    list,
-    page,
-    limit,
-    totalCount,
-    setPage,
-    setLimit,
-  } = useStatusCategory()
+    register,
+    handleSubmit,
+    control,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<StatusCategoryFormData>({
+    resolver: zodResolver(StatusCategoryFormData),
+    defaultValues: {
+      name: "",
+      description: "",
+      isactive: true,
+    },
+  })
 
-  // Sync page and limit from URL on mount and when URL changes
-  useEffect(() => {
-    const urlPage = parseInt(searchParams.get('page') || '1', 10)
-    const urlLimit = parseInt(searchParams.get('limit') || '5', 10)
-    if (urlPage !== page || urlLimit !== limit) {
-      setPage(urlPage)
-      setLimit(urlLimit)
-      loadCategories(urlPage, urlLimit)
-    }
-  }, [searchParams, page, limit, setPage, setLimit, loadCategories])
-
-  const filteredAndSortedList = useMemo(() => { // Memoized filtered and sorted list for performance
-    // First filter by search term
-    const filtered = list.filter(item =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.description || '').toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    // Then sort
-    if (sortBy === 'id') {
-      return filtered // Return as is, since API already orders by ID ASC
-    }
-    return filtered.sort((a, b) => {
-      let aVal: string | boolean | number, bVal: string | boolean | number
-      if (sortBy === 'name') {
-        aVal = a.name.toLowerCase()
-        bVal = b.name.toLowerCase()
-      } else if (sortBy === 'description') {
-        aVal = (a.description || '').toLowerCase()
-        bVal = (b.description || '').toLowerCase()
-      } else if (sortBy === 'status') {
-        aVal = a.isactive
-        bVal = b.isactive
-      } else {
-        aVal = a.name.toLowerCase()
-        bVal = b.name.toLowerCase()
-      }
-      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1
-      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1
-      return 0
-    })
-  }, [list, sortBy, sortOrder, searchTerm])
-
-  // Server-side pagination logic
-  const totalPages = Math.ceil(totalCount / limit)
-  const paginatedList = filteredAndSortedList // Since data is already paginated from server, but we apply client-side search/sort
-
-  //for switch
-  const handleToggleStatus = async (id: number, isactive: boolean) => {
+  // onsubmit form
+  const onSubmit = async (data: StatusCategoryFormData) => {
     try {
-      await fetch(`/api/status-category/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isactive }),
-      })
-      await loadCategories() // refresh table
-    } catch (err) {
-      console.error(err)
-      toast.error("Failed to update status")
+      await actions.saveCategory(data)
+
+      reset()
+      setOpen(false)
+      toast.success(
+        ui.editingId
+          ? "Status category updated"
+          : "Status category created"
+      )
+    } catch {
+      toast.error("Something went wrong")
     }
   }
-  
+
   return (
     <div className="space-y-13">
-      <h1 className="scroll-m-20 mt-15 text-center text-4xl font-extrabold tracking-tight">
+      <h1 className="scroll-m-20 text-center text-4xl font-extrabold tracking-tight">
         Status-Category Page
       </h1>
 
@@ -155,13 +122,15 @@ const StatusCategory = () => {
       <Dialog open={open} onOpenChange={setOpen}>
         <div className="mt-6 mb-0 overflow-x-auto sm:max-w-6xl mx-auto">
           <DialogTrigger asChild>
-            <Button
+            <Button className="cursor-pointer" 
               onClick={() => {
+                    reset()
+                    setEditingId(null)
                     setOpen(true)
                   }}
             >
               Add Category
-            </Button> 
+            </Button>
           </DialogTrigger>
         </div>
       <DialogContent className="sm:max-w-xl"
@@ -170,41 +139,25 @@ const StatusCategory = () => {
       >
         <DialogHeader>
           <DialogTitle>
-            {editingId ? "Update Status Category" : "Add Status Category"}
+            {ui.editingId ? "Update Status Category" : "Add Status Category"}
           </DialogTitle>
         </DialogHeader>
        <Card className="max-w-xl mx-100%">
-        <CardHeader>
-          <CardTitle>
-            {editingId ? "Update Status Category" : "Add Status Category"}
-          </CardTitle>
-        </CardHeader>
-
         <CardContent>
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault()
-              const success = await handleSave()
-              if (success) {
-                setOpen(false)
-              }
-            }}
-            className="space-y-4"
-          >
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
             {/* Name */}
             <div className="space-y-1">
               <Label>Enter Category Name</Label>
               <Input
                 placeholder="Status category name *"
-                value={name}
                 maxLength={100}
-                onChange={(e) => {setName(e.target.value)
-                                  setNameError("")}
-                }className={nameError ? "border-red-500" : ""}
+                {...register("name")}
+                className={errors.name ? "border-red-500" : ""}
               />
-                {nameError && (
+                {errors.name && (
                     <span className="text-red-500 text-sm">
-                      {nameError}
+                      {errors.name.message}
                     </span>
                   )}
             </div>
@@ -214,29 +167,32 @@ const StatusCategory = () => {
               <Label>Enter Description</Label>
               <Input
                 placeholder="Description (optional)"
-                value={description}
                 maxLength={255}
-                onChange={(e) => setDescription(e.target.value)}
+                 {...register("description")}
               />
             </div>
 
             {/* Status */}
             <div className="flex items-center gap-3">
-              <Checkbox
-                id="isActive"
-                checked={isActive}
-                onCheckedChange={(checked) => {
-                  console.log("Checked:", checked)
-                  setIsActive(checked === true) // important
-                }}
-              />
+               <Controller
+                    name="isactive"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
               <Label htmlFor="isActive">
-                {isActive ? "Active" : "Inactive"}
+                {control._formValues?.isactive ? "Active" : "Inactive"}
               </Label>
             </div>
-            <Button type="submit" disabled={loading} className="w-full">
-              {editingId ? "Update" : "Save"}
+
+            <Button type="submit" disabled={ui.loading} className="w-full">
+              {ui.editingId ? "Update" : "Save"}
             </Button>
+
           </form>
         </CardContent>
        </Card>
@@ -244,78 +200,78 @@ const StatusCategory = () => {
       </Dialog>
 
       {/* Table to display status categories */}
-      {list.length > 0 && (
+      {data.list.length > 0 && (
         <div className="mt-4  overflow-x-auto sm:max-w-6xl mx-auto">
           <div className="mb-6 sm:max-w-6xl mx-auto flex justify-end items-center">
             <Input
               placeholder="Search by name or description"
-              value={searchTerm}
               onChange={(e) => {
-                setSearchTerm(e.target.value)
-                setPage(1)
-                const params = new URLSearchParams(searchParams.toString())
-                params.set('page', '1')
-                router.push(`?${params.toString()}`, { scroll: false })
+                setters.setSearchTerm(e.target.value)
+                setters.setPage(1)
               }}
               className="max-w-sm"
             />
           </div>
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-200 text-gray-800 border-b border-black">
+              <TableRow className="bg-muted border-b border-border">
                 <TableHead>
                   <div className="flex items-center gap-1">
                     <div className="flex flex-col">
-                      <ChevronUp className={`h-3 w-3 cursor-pointer ${sortBy === 'name' && sortOrder === 'asc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setSortBy('name'); setSortOrder('asc'); setPage(1); loadCategories(1, limit); }} />
-                      <ChevronDown className={`h-3 w-3 cursor-pointer ${sortBy === 'name' && sortOrder === 'desc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setSortBy('name'); setSortOrder('desc'); setPage(1); loadCategories(1, limit); }} />
+                      <ChevronUp className={`h-3 w-3 cursor-pointer ${data.sortBy === 'name' && data.sortOrder === 'asc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setters.setSortBy('name'); setters.setSortOrder('asc'); setters.setPage(1); ui.loadCategories(1, data.limit); }} />
+                      <ChevronDown className={`h-3 w-3 cursor-pointer ${data.sortBy === 'name' && data.sortOrder === 'desc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setters.setSortBy('name'); setters.setSortOrder('desc'); setters.setPage(1); ui.loadCategories(1, data.limit); }} />
                     </div>
-                    <span className="cursor-pointer" onClick={() => { setSortBy('id'); setSortOrder('asc'); setPage(1); loadCategories(1, limit); }}>Name</span>
+                    <span className="cursor-pointer" onClick={() => { setters.setSortBy('id'); setters.setSortOrder('asc'); setters.setPage(1); ui.loadCategories(1, data.limit); }}>Name</span>
                   </div>
                 </TableHead>
                 <TableHead>
                   <div className="flex items-center gap-1">
                     <div className="flex flex-col">
-                      <ChevronUp className={`h-3 w-3 cursor-pointer ${sortBy === 'description' && sortOrder === 'asc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setSortBy('description'); setSortOrder('asc'); setPage(1); loadCategories(1, limit); }} />
-                      <ChevronDown className={`h-3 w-3 cursor-pointer ${sortBy === 'description' && sortOrder === 'desc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setSortBy('description'); setSortOrder('desc'); setPage(1); loadCategories(1, limit); }} />
+                      <ChevronUp className={`h-3 w-3 cursor-pointer ${data.sortBy === 'description' && data.sortOrder === 'asc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setters.setSortBy('description'); setters.setSortOrder('asc'); setters.setPage(1); ui.loadCategories(1, data.limit); }} />
+                      <ChevronDown className={`h-3 w-3 cursor-pointer ${data.sortBy === 'description' && data.sortOrder === 'desc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setters.setSortBy('description'); setters.setSortOrder('desc'); setters.setPage(1); ui.loadCategories(1, data.limit); }} />
                     </div>
-                    <span className="cursor-pointer" onClick={() => { setSortBy('id'); setSortOrder('asc'); setPage(1); loadCategories(1, limit); }}>Description</span>
+                    <span className="cursor-pointer" onClick={() => { setters.setSortBy('id'); setters.setSortOrder('asc'); setters.setPage(1); ui.loadCategories(1, data.limit); }}>Description</span>
                   </div>
                 </TableHead>
                 <TableHead>
                   <div className="flex items-center gap-1">
                     <div className="flex flex-col">
-                      <ChevronUp className={`h-3 w-3 cursor-pointer ${sortBy === 'status' && sortOrder === 'asc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setSortBy('status'); setSortOrder('asc'); setPage(1); loadCategories(1, limit); }} />
-                      <ChevronDown className={`h-3 w-3 cursor-pointer ${sortBy === 'status' && sortOrder === 'desc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setSortBy('status'); setSortOrder('desc'); setPage(1); loadCategories(1, limit); }} />
+                      <ChevronUp className={`h-3 w-3 cursor-pointer ${data.sortBy === 'status' && data.sortOrder === 'asc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setters.setSortBy('status'); setters.setSortOrder('asc'); setters.setPage(1); ui.loadCategories(1, data.limit); }} />
+                      <ChevronDown className={`h-3 w-3 cursor-pointer ${data.sortBy === 'status' && data.sortOrder === 'desc' ? 'text-black' : 'text-gray-400'}`} onClick={() => { setters.setSortBy('status'); setters.setSortOrder('desc'); setters.setPage(1); ui.loadCategories(1, data.limit); }} />
                     </div>
-                    <span className="cursor-pointer" onClick={() => { setSortBy('id'); setSortOrder('asc'); setPage(1); loadCategories(1, limit); }}>Status</span>
+                    <span className="cursor-pointer" onClick={() => { setters.setSortBy('id'); setters.setSortOrder('asc'); setters.setPage(1); ui.loadCategories(1, data.limit); }}>Status</span>
                   </div>
                 </TableHead>
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedList.map((item) => (
+              {data.paginatedList.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell>{item.description || "-"}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Switch
+                      <Switch className="cursor-pointer" 
                         checked={item.isactive}
                         onCheckedChange={(checked) => {
-                          handleToggleStatus(item.id, checked)
+                          actions.handleToggleStatus(item.id, checked)
                         }}
                       />
                       <span className="text-sm">
                         {item.isactive ? "Active" : "Inactive"}
                       </span>
                     </div>
-                  </TableCell>                 
+                  </TableCell>
                   <TableCell className="flex gap-2 justify-center">
-                    <Button
+                    <Button className="cursor-pointer" 
                       size="sm"
                       variant="outline"
-                      onClick={() => {handleEdit(item)
+                      onClick={() => {actions.handleEdit(item)
+                         // SET VALUES FOR EDITING
+                        setValue("name", item.name)
+                        setValue("description", item.description || "")
+                        setValue("isactive", item.isactive)
                         setOpen(true)
                       }}
                     >
@@ -323,7 +279,7 @@ const StatusCategory = () => {
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm"  variant="destructive">
+                        <Button size="sm"  variant="destructive" className="cursor-pointer" >
                           Delete
                         </Button>
                       </AlertDialogTrigger>
@@ -344,7 +300,7 @@ const StatusCategory = () => {
                           </AlertDialogCancel>
 
                           <AlertDialogAction
-                            onClick={() => handleDelete(item.id)}
+                            onClick={() => actions.handleDelete(item.id)}
                           >
                             Delete
                           </AlertDialogAction>
@@ -360,14 +316,14 @@ const StatusCategory = () => {
 
             <div className="flex justify-end mt-15">
 
-              <div className="flex items-center gap-2 mr-10">
+              <div className="flex items-center gap-2 mx-8">
                 <Label>Rows per page:</Label>
                 <Select
-                  value={limit.toString()}
+                  value={data.limit.toString()}
                   onValueChange={(value) => {
                     const newLimit = parseInt(value, 10)
-                    setLimit(newLimit)
-                    setPage(1)
+                    setters.setLimit(newLimit)
+                    setters.setPage(1)
                     const params = new URLSearchParams(searchParams.toString())
                     params.set('page', '1')
                     params.set('limit', newLimit.toString())
@@ -387,40 +343,42 @@ const StatusCategory = () => {
               </div>
 
               <div className="flex justify-center gap-3 ">
-                <Button
+                {/* privious */}
+                <Button className="cursor-pointer" 
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const newPage = page - 1
-                    setPage(newPage)
+                    const newPage = data.page - 1
+                    setters.setPage(newPage)
                     const params = new URLSearchParams(searchParams.toString())
                     params.set('page', newPage.toString())
                     router.push(`?${params.toString()}`, { scroll: false })
                   }}
-                  disabled={page === 1}
+                  disabled={data.page === 1}
                 >
                   Previous
                 </Button>
 
                 <span className="text-sm flex items-center">
-                  Page {page}
+                  Page {data.page}
                 </span>
 
-                <Button
+                  {/* next */}
+                <Button className="cursor-pointer" 
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const newPage = page + 1
-                    setPage(newPage)
+                    const newPage = data.page + 1
+                    setters.setPage(newPage)
                     const params = new URLSearchParams(searchParams.toString())
                     params.set('page', newPage.toString())
                     router.push(`?${params.toString()}`, { scroll: false })
                   }}
-                  disabled={page === totalPages}
+                  disabled={data.page === data.totalPages}
                 >
                   Next
                 </Button>
-              </div>                 
+              </div>
 
             </div>
         </div>

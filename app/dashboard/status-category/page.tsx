@@ -1,5 +1,5 @@
 import React from 'react'
-import StatusCategory from '../components/status-category'
+import StatusCategory from '../../components/statusCategory'
 
 const StatusCategoryPage = () => {
   return (

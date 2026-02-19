@@ -1,17 +1,6 @@
-
-import { Pool } from 'pg';
 import { z } from "zod";
 import { success, error, exists } from "@/utils/response";
-
-
-// Setup PostgreSQL connection
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'tms_db',
-  password: '12345678',
-  port: 5432,
-}); 
+import { pool } from '@/lib/config';
 
 // display
 export async function GET(request: Request) {
