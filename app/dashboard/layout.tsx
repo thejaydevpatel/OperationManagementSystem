@@ -72,6 +72,19 @@ export default function DashboardLayout({
                     <Layers className="ml-2 mr-2 h-4 w-4" />
                     Status Category
                   </Link>
+
+                  <Link 
+                    href="/location-lookup\location-master\new"
+                    className={ `flex items-center gap-2 ${
+                      pathname === "/location-lookup\location-master\new"
+                        ? "font-bold text-blue-600"
+                        : ""
+                    }`}
+                  >
+                    <Layers className="ml-2 mr-2 h-4 w-4" />
+                    Location Master
+                  </Link>
+
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <Link href="#">

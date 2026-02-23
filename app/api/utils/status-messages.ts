@@ -1,0 +1,15 @@
+export const statusMessages = {
+  SAVE_SUCCESS: "Data has been successfully saved.",
+  UPDATE_SUCCESS: "Data has been successfully updated.",
+  DELETE_SUCCESS: "Data has been successfully deleted.",
+  FETCH_SUCCESS: "Data fetched successfully.",
+  DATA_EXISTS: "Data already exists.",
+  NOT_FOUND: "Data not found.",
+  INTERNAL_ERROR: "Internal server error.",
+  UNAUTHORIZED: "Unauthorized access.",
+  BAD_REQUEST: "Bad request.",
+  ACTIVE_STATUS: "Item has been activated.",
+  SUSPEND_STATUS: "Item has been de-activated.",
+  DATA_AUTH_ERROR: "The username or password you entered is incorrect.",
+  DATA_AUTH_SUCCESFULL: "Login to the system successful. Redirecting...",
+};
