@@ -1,47 +1,43 @@
-// "use client";
+"use client";
 
-// import Breadcrumb from "@/app/(DashboardLayout)/layout/shared/breadcrumb/Breadcrumb";
-// import PageContainer from "@/app/components/container/PageContainer";
-// import { ModuleDetailsString } from "@/app/(DashboardLayout)/types/module-details/ModuleDetails";
 // import Main from "@/app/components/location-lookup/location-master/main";
-// import { useParams } from "next/navigation";
-// import { getStringFromParam } from "@/app/components/utils/data-type-parser";
+import { useParams } from "next/navigation";
 
-// const BCrumb = [
-//   {
-//     to: "/",
-//     title: "Location Lookup",
-//   },
-//   {
-//     title: "Edit Location Master",
-//   },
-// ];
+const BCrumb = [
+  {
+    to: "/",
+    title: "Location Lookup",
+  },
+  {
+    title: "Edit Location Master",
+  },
+];
 
-// const EditPage = () => {
-//   const params = useParams();
-//   const id = params.id;
+const EditPage = () => {
+  const params = useParams();
+  const id = params.id;
 
-//   const objModule: ModuleDetailsString = {
-//     moduleId: 1,
-//     keyWord: "location_master",
-//     subkeyWord: "location_lookup",
-//     serviceId: getStringFromParam(id),
-//     endPoint: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-lookup/location-master`,
-//     subDirectoryEndPoint: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-lookup/location-master`,
-//     tableEndPoint: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-lookup/location-master`,
-//     isNew: false,
-//   };
+  const objModule: ModuleDetailsString = {
+    moduleId: 1,
+    keyWord: "location_master",
+    subkeyWord: "location_lookup",
+    serviceId: getStringFromParam(id),
+    endPoint: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-lookup/location-master`,
+    subDirectoryEndPoint: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-lookup/location-master`,
+    tableEndPoint: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-lookup/location-master`,
+    isNew: false,
+  };
 
-//   return (
-//     <PageContainer
-//       title={`Manage ${objModule.subkeyWord}`}
-//       description={`Manage ${objModule.subkeyWord}`}
-//     >
-//       <Breadcrumb title={`Manage ${objModule.subkeyWord}`} items={BCrumb} />
+  return (
+    <PageContainer
+      title={`Manage ${objModule.subkeyWord}`}
+      description={`Manage ${objModule.subkeyWord}`}
+    >
+      <Breadcrumb title={`Manage ${objModule.subkeyWord}`} items={BCrumb} />
 
-//       <Main module={objModule} />
-//     </PageContainer>
-//   );
-// };
+      <Main module={objModule} />
+    </PageContainer>
+  );
+};
 
-// export default EditPage;
+export default EditPage;

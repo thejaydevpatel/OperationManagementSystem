@@ -21,7 +21,6 @@ export default function generateApiFiles(
 ) {
   let baseDir = path.join(
     process.cwd(),
-    "src",
     "app",
     "api",
     moduleName.replaceAll("_", "-"),
@@ -34,8 +33,7 @@ export default function generateApiFiles(
   if (isChildPage) {
     baseDir = path.join(
       process.cwd(),
-      "src",
-      "app",
+       "app",
       "api",
       moduleName.replaceAll("_", "-"),
       isChildPage ? mainTable : tableName.replaceAll("_", "-"),
@@ -73,21 +71,6 @@ export default function generateApiFiles(
       .split("_")
       .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
       .join("") + "Entity";
-
-  // Map DB fields to TS types
-
-  // const interfaceFields = fields
-  //   .map((f) => {
-  //     let tsType = "string";
-  //     if (f.type.includes("INT")) tsType = "number";
-  //     if (f.type === "BOOLEAN") tsType = "boolean";
-  //     if (f.type.includes("TIMESTAMP")) tsType = "string";
-  //     if (f.type === "UUID") tsType = "string";
-  //     if (f.specificControl === "File") tsType = "File";
-  //     if (f.specificControl === "File") tsType = `${f.name}Logo`;
-  //     return `  ${f.name}${f.nullable ? "?" : ""}: ${tsType};`;
-  //   })
-  //   .join("\n");
 
   const interfaceFields = fields
     .flatMap((f) => {
@@ -130,22 +113,23 @@ export default function generateApiFiles(
     const mainRouteContent = `import { NextRequest } from "next/server";
 import { Pool } from "pg";
 import { ApiResponse } from "@/app/api/utils/send-response";
-import { getCurrentDate } from "@/lib/date-functions";
+import { getStartTime } from "@/lib/date-functions";
 import { ${interfaceName} } from "./interface/${tableName.replaceAll(
       "_",
       "-"
     )}";
 import { getDbConnection } from "@/app/api/config/postgres-db";
-import { retriveTokenDetails } from "@/app/api/Login/tokens/token";
-import { checkLookupUsage } from "@/app/api/lib/db/used-unused-rows/used-unused-rows-all";
+import { retriveTokenDetails } from "@/app/api/login/tokens/token";
+// import { checkLookupUsage } from "@/app/api/lib/db/used-unused-rows/used-unused-rows";
+import { getUsedUnusedRows } from "@/app/api/lib/db/used-unused-rows/used-unused-rows";
 
 
-const dbName = ${dbEnv};
+const dbName = process.env.${dbEnv}!;
 
 export async function GET(req: NextRequest${
       isChildPage ? ", { params }: { params: { id: string } }" : ""
     }) {
-  const startTime = getCurrentDate();
+  const startTime = getStartTime();
   try {
   const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") ?? "1", 10);
@@ -182,15 +166,24 @@ export async function GET(req: NextRequest${
       countResult?.rows.length > 0 ? Math.ceil(totalRecords / pageSize) : 0;
 
       if (result?.rows.length > 0) {
-            const usedUnusedRows = await checkLookupUsage(
-              dbName,
-              "${moduleName}_${tableName}"
-            );
+            // const usedUnusedRows = await checkLookupUsage(
+            //   dbName,
+            //   "${moduleName}_${tableName}"
+            // );
       
-            result.rows.forEach((element) => {
-              const usageStatus = usedUnusedRows.find((a) => a.id === element.id);
-              element.is_used = usageStatus?.usage_status;
-            });
+            // result.rows.forEach((element) => {
+            //   const usageStatus = usedUnusedRows.find((a) => a.id === element.id);
+            //   element.is_used = usageStatus?.usage_status;
+            // });
+            const usedUnusedRows = await getUsedUnusedRows(
+                        "${moduleName}_${tableName}",
+                        client
+                      );
+            
+                      result.rows.forEach((element) => {
+                        const usageData = usedUnusedRows.find((a) => a.id === element.id);
+                        element.is_used = usageData?.is_used ?? false;
+                      });
           }
 
     return ApiResponse.fetched(result?.rows, startTime, "",{
@@ -210,7 +203,7 @@ export async function GET(req: NextRequest${
 export async function POST(req: NextRequest${
       isChildPage ? ", { params }: { params: { id: string } }" : ""
     }) {
-  const startTime = getCurrentDate();
+  const startTime = getStartTime();
   try {
   const client = getDbConnection(dbName);
   const referer = req.headers.get("referer");
@@ -219,13 +212,17 @@ export async function POST(req: NextRequest${
     const userDetails = await retriveTokenDetails(req);
     body.tenant_id = userDetails?.tenantId;
     body.created_by = userDetails?.empCode;
-    body.created_at = new Date().toISOString();
+    body.created_at = new Date();
     body.host_ip = userDetails?.userIp;
     body.url = referer && referer.trim() !== "" ? referer : req.url;
     
     ${isChildPage ? `body.${mainId} = Number(params.id)` : ""}
     
-
+ Object.keys(body).forEach((key) => {
+      if ((body as any)[key] === "") {
+        (body as any)[key] = null;
+      }
+    });
 
     
 
@@ -256,26 +253,36 @@ export async function POST(req: NextRequest${
     const idRouteContent = `import { NextRequest } from "next/server";
 import { Pool } from "pg";
 import { ApiResponse } from "@/app/api/utils/send-response";
-import { getCurrentDate } from "@/lib/date-functions";
+import { getStartTime } from "@/lib/date-functions";
 import { ${interfaceName} } from "../interface/${tableName.replaceAll(
       "_",
       "-"
     )}";
 import { getDbConnection } from "@/app/api/config/postgres-db";
-import { retriveTokenDetails } from "@/app/api/Login/tokens/token";
+import { retriveTokenDetails } from "@/app/api/login/tokens/token";
 import { PrepareAndDispatchValidation } from "@/app/api/lib/db/used-unused-rows/used-unused-rows";
 
-const dbName = ${dbEnv};
+const dbName = process.env.${dbEnv}!;
 
-export async function GET(req: NextRequest, { params }: { params: { ${
-      isChildPage ? "recordid" : "id"
-    }: string } }) {
-  const startTime = getCurrentDate();
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ ${
+    isChildPage ? "recordid" : "id"
+  }: string }> }
+) {
+  const startTime = getStartTime();
+
   try {
+    const { ${isChildPage ? "recordid" : "id"} } = await params;
+
     const client = getDbConnection(dbName);
-    const result = await client.query(\`SELECT * FROM ${moduleName}_${tableName} WHERE id = $1\`, [params.${
-      isChildPage ? "recordid" : "id"
-    }]);
+
+    const result = await client.query(
+      \`SELECT * FROM ${moduleName}_${tableName} WHERE id = $1\`,
+      [Number(${isChildPage ? "recordid" : "id"})]
+    );
+
     return ApiResponse.fetched(result?.rows, startTime, "");
   } catch (err) {
     console.error("Error fetching ${moduleName}_${tableName}:", err);
@@ -283,59 +290,89 @@ export async function GET(req: NextRequest, { params }: { params: { ${
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { ${
-      isChildPage ? "recordid" : "id"
-    }: string } }) {
-  const startTime = getCurrentDate();
-  try {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ ${isChildPage ? "recordid" : "id"}: string }> }) {
+  const startTime = getStartTime();
+  try { 
+  const { ${isChildPage ? "recordid" : "id"} } = await params;
   const client = getDbConnection(dbName);
   const referer = req.headers.get("referer");
     const body: Partial<${interfaceName}> = await req.json();
 
     const userDetails = await retriveTokenDetails(req);
+
     body.tenant_id = userDetails?.tenantId;
     body.updated_by = userDetails?.empCode;
     body.updated_at = new Date().toISOString();
     body.host_ip = userDetails?.userIp;
     body.url = referer && referer.trim() !== "" ? referer : req.url;
 
-    const keys = Object.keys(body);
-    const values = Object.values(body);
-    if (keys.length === 0) return ApiResponse.failed("No fields to update", startTime);
+    // remove protected columns 
+    delete (body as any).id; 
+    delete (body as any).short_id; 
+    delete (body as any).created_at; 
+    delete (body as any).created_by;
+
+    // remove generated File control helper fields (Logo) 
+    const filteredBody = Object.fromEntries( 
+      Object.entries(body).filter(([key]) => !key.endsWith("Logo")) 
+    );
+
+    const keys = Object.keys(filteredBody);
+    const values = Object.values(filteredBody);
+
+    if (keys.length === 0) {
+      return ApiResponse.failed("No fields to update", startTime);
+    }
+
     const setClause = keys.map((k, i) => \`\${k} = $\${i + 1}\`).join(", ");
-    const query = \`UPDATE ${moduleName}_${tableName} SET \${setClause} WHERE id = $\${keys.length + 1} RETURNING *\`;
-    const result = await client.query(query, [...values, params.${
-      isChildPage ? "recordid" : "id"
-    }]);
-    return ApiResponse.updated(result.rows[0]?.id || params.${
-      isChildPage ? "recordid" : "id"
-    }, startTime);
+    
+    const query = \`
+    UPDATE ${moduleName}_${tableName} 
+    SET \${setClause} 
+    WHERE id = $\${keys.length + 1} 
+    RETURNING *
+    \`;
+
+    const result = await client.query(query, [
+      ...values, 
+     Number(${isChildPage ? "recordid" : "id"})
+    ]);
+
+    return ApiResponse.updated(
+      result.rows[0]?.id || ${isChildPage ? "recordid" : "id"},
+      startTime
+    );
+
   } catch (err) {
     console.error("Error updating ${moduleName}_${tableName}:", err);
     return ApiResponse.failed("", startTime);
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { ${
-      isChildPage ? "recordid" : "id"
-    }: string } }) {
-  const startTime = getCurrentDate();
+
+
+export async function DELETE(
+  req: NextRequest, 
+  { params }: { params: Promise<{ ${isChildPage ? "recordid" : "id"}: string }> }
+ ) {
+  const startTime = getStartTime();
   try {
+
+      const { ${isChildPage ? "recordid" : "id"} } = await params;
+
+      const client = getDbConnection(dbName);
 
   const referenced = await PrepareAndDispatchValidation(
         "${moduleName}_${tableName}",
-        dbName,
-        params.id
+        client,
+        ${isChildPage ? "recordid" : "id"}
       );
   
       if (referenced.validate) {
         return ApiResponse.referencedError("", startTime, referenced.tables);
       }
 
-
-  const client = getDbConnection(dbName); 
-
-   const userDetails = await retriveTokenDetails(req);
+      const userDetails = await retriveTokenDetails(req);
       const deletedAt = new Date().toISOString();
       const deletedBy = userDetails?.empCode; 
   
@@ -347,9 +384,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { ${
         WHERE id = $1
         RETURNING *\`;
   
-      const result = await client.query(query, [params.${
-        isChildPage ? "recordid" : "id"
-      }, deletedAt, deletedBy]);
+      const result = await client.query(query, [
+      ${isChildPage ? "recordid" : "id"},
+      deletedAt,
+      deletedBy,
+    ]);
    
 
     return ApiResponse.deleted(startTime);
@@ -359,25 +398,42 @@ export async function DELETE(req: NextRequest, { params }: { params: { ${
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { ${
-      isChildPage ? "recordid" : "id"
-    }: string } }) {
-  const startTime = getCurrentDate();
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ ${isChildPage ? "recordid" : "id"}: string }> }
+) {
+  const startTime = getStartTime();
+
   try {
-  const client = getDbConnection(dbName);
-    const result = await client.query(\`UPDATE ${moduleName}_${tableName} SET is_active = NOT is_active WHERE id = $1 RETURNING *\`, [params.${
-      isChildPage ? "recordid" : "id"
-    }]);
-     if (result?.rows[0].is_active) {
-          return ApiResponse.activated(startTime);
-        } else {
-          return ApiResponse.suspended(startTime);
-        }
+    const { ${isChildPage ? "recordid" : "id"} } = await params;
+
+    const client = getDbConnection(dbName);
+
+    const result = await client.query(
+      \`UPDATE ${moduleName}_${tableName} 
+       SET is_active = NOT is_active 
+       WHERE id = $1 
+       RETURNING *\`,
+      [${isChildPage ? "recordid" : "id"}]
+    );
+
+    if (!result.rows.length) {
+      return ApiResponse.notFound(startTime);
+    }
+
+    if (result.rows[0].is_active) {
+      return ApiResponse.activated(startTime);
+    } else {
+      return ApiResponse.suspended(startTime);
+    }
+
   } catch (err) {
     console.error("Error updating status ${moduleName}_${tableName}:", err);
     return ApiResponse.failed("", startTime);
   }
 }
+
+
 `;
 
     if (!fs.existsSync(idRoutePath)) {
@@ -393,11 +449,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { ${
   if (!fs.existsSync(idFileRoutePath)) {
     const idFileContent = `import { NextRequest } from "next/server";
     import { ApiResponse } from "@/app/api/utils/send-response";
-    import { getCurrentDate } from "@/lib/date-functions";
+    import { getStartTime } from "@/lib/date-functions";
     import { uploadFiles } from "@/app/components/js-functions/file-upload/file-upload";
     import { getDbConnection } from "@/app/api/config/postgres-db";
     
-    const dbName = ${dbEnv};
+const dbName = process.env.${dbEnv}!;
     
     // Map field -> upload path
     const fileFieldConfig: Record<string, { common: string; specific: string }> = {
@@ -407,65 +463,73 @@ export async function PATCH(req: NextRequest, { params }: { params: { ${
       },
     };
     
-    export async function PATCH(
-      req: NextRequest,
-      { params }: { params: { ${isChildPage ? "recordid" : "id"}: string } }
-    ) {
-      const startTime = getCurrentDate();
-      const client = getDbConnection(dbName);
-    
-      try {
-        const formData = await req.formData();
-    
-        // Get id (assuming it comes from formData)
-        const id = params.${isChildPage ? "recordid" : "id"};  
-        if (!id) {
-          return ApiResponse.failed("Missing id", startTime);
-        }
-    
-        // Collect uploaded file paths
-        const uploadedPaths: Record<string, string> = {};
-    
-        for (const [key, value] of Array.from(formData.entries())) {
-          if (value instanceof File && fileFieldConfig["filePath"]) {
-            const paths = fileFieldConfig["filePath"]; //key commented which should be pass dynamic table name to be taken
-    
-            const uploadedPath = await uploadFiles(
-              value,
-              paths.common,
-              paths.specific
-            );
-            uploadedPaths[key] = uploadedPath;
-          }
-        }
-    
-        // If no files uploaded, return early
-        if (Object.keys(uploadedPaths).length === 0) {
-          return ApiResponse.failed("No valid files uploaded", startTime);
-        }
-    
-        // Build dynamic update query
-        const setClauses = Object.keys(uploadedPaths)
-          .map((field, idx) => \`\${field} = $\${idx + 2}\`)
-          .join(", ");
-    
-        const values = [id, ...Object.values(uploadedPaths)];
-    
-        const query = \`UPDATE ${moduleName}_${tableName} SET \${setClauses} WHERE id = $1 RETURNING *\`;
-    
-        const result = await client.query(query, values);
-    
-        if (!result.rows[0]) {
-          return ApiResponse.failed("Update failed", startTime);
-        }
-    
-        return ApiResponse.updated(result.rows[0], startTime);
-      } catch (err) {
-        console.error("Database error:", err);
-        return ApiResponse.failed("", startTime);
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ ${isChildPage ? "recordid" : "id"}: string }> }
+) {
+  const startTime = getStartTime();
+
+  try {
+    const { ${isChildPage ? "recordid" : "id"} } = await params;
+
+    if (!id) {
+      return ApiResponse.failed("Missing id", startTime);
+    }
+
+    const client = getDbConnection(dbName);
+
+    const formData = await req.formData();
+
+    const uploadedPaths: Record<string, string> = {};
+
+    for (const [key, value] of formData.entries()) {
+      if (key === "id") continue;
+
+      if (value instanceof File && fileFieldConfig[key]) {
+        const paths = fileFieldConfig[key];
+
+        const uploadedPath = await uploadFiles(
+          value,
+          paths.common,
+          paths.specific
+        );
+
+        uploadedPaths[key] = uploadedPath;
       }
     }
-    
+
+    if (Object.keys(uploadedPaths).length === 0) {
+      return ApiResponse.failed("No valid files uploaded", startTime);
+    }
+
+    const setClauses = Object.keys(uploadedPaths)
+      .map((field, idx) => \`\${field} = \$\${idx + 2}\`)
+      .join(", ");
+
+    const values = [id, ...Object.values(uploadedPaths)];
+
+    const result = await client.query(
+      \`UPDATE ${moduleName}_${tableName}
+       SET \${setClauses}
+       WHERE id = $1
+       RETURNING *\`,
+      values
+    );
+
+    if (!result.rows.length) {
+      return ApiResponse.notFound(startTime);
+    }
+
+    return ApiResponse.updated(result.rows[0], startTime);
+
+  } catch (err) {
+    console.error(
+      "Error updating file upload \${moduleName}_\${tableName}:",
+      err
+    );
+    return ApiResponse.failed("", startTime);
+  }
+}
 `;
 
     if (!fs.existsSync(idFileRoutePath)) {

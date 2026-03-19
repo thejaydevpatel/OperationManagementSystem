@@ -1,6 +1,17 @@
 import fs from "fs";
 import path from "path";
 
+interface Field {
+  name: string;
+  type: string;
+  nullable?: boolean;
+  primaryKey?: boolean;
+  toShowOnLayout:boolean;
+  specificControl:string;
+    refTable?: string;  
+
+}
+
 export function toPascalCaseText(str: string) {
   return str
     .split("_")
@@ -11,14 +22,13 @@ export function toPascalCaseText(str: string) {
 export function generateListComponent(
   moduleName: string,
   tableName: string,
-  fields: any[],
+  fields: Field[],
   isChildPage: boolean,
   mainTable: string
 ) {
   const dirPath = path.join(
     process.cwd(),
-    "src",
-    "app",
+     "app",
     "components",
     moduleName.replaceAll("_", "-"),
     tableName.replaceAll("_", "-")
@@ -62,142 +72,193 @@ export function generateListComponent(
     };
   });
 
-  // Generate TableCell content template for each field
-  // For special fields like image URLs or boolean, you can customize (optional)
-  // Here I'll just print the field values; user can customize later.
+
   const tableCells = visibleFields
-    .map((f) => {
-      if (f.specificControl.toLowerCase().includes("file")) {
-        // Render image/avatar for logo or image fields
-        return `<TableCell>
-          <Avatar
-            src={\`/images/${moduleName}_${tableName}/\` + row.${f.name}}
+  .map((f) => {
+    // FILE / IMAGE FIELD
+    if (f.specificControl?.toLowerCase().includes("file")) {
+      return `
+        <TableCell>
+          <img
+            src={\`/images/${moduleName}_${tableName}/\${row.${f.name} || "-"}\`}
             alt="${f.name}"
-            sx={{ width: 56, height: 56 }}
+            className="w-14 h-14 object-cover rounded-md border"
           />
-        </TableCell>`;
-      }
-      if (f.type === "BOOLEAN") {
-        return `<TableCell>
-        <Typography variant="subtitle2">{row.${f.name} ? "Yes" : "No"}</Typography>
-      </TableCell>`;
-      }
-      return `<TableCell>
-      <Typography color="textSecondary" variant="h6" fontWeight="400">
-        {row.${f.name}}
-      </Typography>
-    </TableCell>`;
-    })
-    .join("\n");
+        </TableCell>
+      `;
+    }
 
-  const content = `
+    // BOOLEAN FIELD
+    if (f.type === "BOOLEAN") {
+      return `
+        <TableCell>
+          <span className="text-sm font-medium">
+            {row.${f.name} ? "Yes" : "No"}
+          </span>
+        </TableCell>
+      `;
+    }
 
+    // DEFAULT TEXT FIELD
+    // RADIO / DROPDOWN SHOW LABEL
+if (
+  f.specificControl === "Radio" ||
+  f.specificControl === "NormalDropDown"
+) {
+  return `
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
+    {${f.name}.find(o => Number(o.id) === Number(row.${f.name}))?.name || "-"}
+      </p>
+    </TableCell>
+  `;
+}
+// DATE / TIME FIELD
+if (
+  f.type === "TIMESTAMP" ||
+  f.type === "TIMESTAMP WITH TIME ZONE" ||
+  f.specificControl === "TimePicker" ||
+  f.specificControl === "DateTimePicker"
+) {
+  return `
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
+        {row.${f.name}
+          ? new Date(row.${f.name}).toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "-"}
+      </p>
+    </TableCell>
+  `;
+}
+
+// DEFAULT TEXT FIELD
+return `
+  <TableCell>
+    <p className="text-muted-foreground text-sm font-normal">
+      {row.${f.name} || "-"}
+    </p>
+  </TableCell>
+`;
+  })
+  .join("\n");
+
+const content = `
 "use client";
 
 import * as React from "react";
-import { useTheme } from "@mui/material/styles";
-import {
-  Typography,
-  TableHead,
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TablePagination,
-  TableRow,
-  TableFooter,
-  IconButton,
-  TableContainer,
-  MenuItem,
-  ListItemIcon,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  Button,
-  DialogActions,
-  Avatar,
-  Stack,
-  Menu,
-  TableSortLabel,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  TextField,
-  Paper,
-} from "@mui/material";
-
-import FirstPageIcon from "@mui/icons-material/FirstPage";
-import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
-import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
-import LastPageIcon from "@mui/icons-material/LastPage";
-
-import PageContainer from "@/app/components/container/PageContainer";
-import ParentCard from "@/app/components/shared/ParentCard";
-import BlankCard from "@/app/components/shared/BlankCard";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-
- 
-
-  ${
-    isChildPage
-      ? `import { ${entityName} } from "@/app/api/${moduleName.replaceAll(
-          "_",
-          "-"
-        )}/${mainTable.replaceAll("_", "-")}/[id]/${tableName.replaceAll(
-          "_",
-          "-"
-        )}/interface/${tableName.replaceAll("_", "-")}"`
-      : `import { ${entityName} } from "@/app/api/${moduleName.replaceAll(
-          "_",
-          "-"
-        )}/${tableName.replaceAll("_", "-")}/interface/${tableName.replaceAll(
-          "_",
-          "-"
-        )}"`
-  }
-
-  
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "@hello-pangea/dnd";
-
 import Link from "next/link";
-import { ModuleDetailsString } from "@/app/(DashboardLayout)/types/module-details/ModuleDetails";
-import EmptyState from "@/app/components/utils/controls/EmptyState/empty-state";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { useDebounce } from "@/hooks/use-debounce";
+ 
+import { useSearchParams } from "next/navigation";
+ import { Switch } from "@/components/ui/switch";
+
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
+import { ModuleDetailsString } from "@/app/(DashboardLayout)/types/module-details/ModuleDetails";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { StatusBadge } from "@/components/StatusBadge";
+
+import {
+  ChevronsLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
+  MoreVertical,
+  Loader2,
+  Plus,
+} from "lucide-react";
+
 import { Pagination, ServiceOrder } from "@/app/api/utils/send-response";
-import { useDebounce } from "@/app/components/libs/de-bounce";
-import CircularProgress from "@mui/material/CircularProgress";
-import StatusBadge from "@/app/components/mui-icons/un-used";
+import EmptyState from "@/components/ui/empty-state";
+
+${
+  isChildPage
+    ? `import { ${entityName} } from "@/app/api/${moduleName.replaceAll(
+        "_",
+        "-"
+      )}/${mainTable.replaceAll("_", "-")}/[id]/${tableName.replaceAll(
+        "_",
+        "-"
+      )}/interface/${tableName.replaceAll("_", "-")}";`
+    : `import { ${entityName} } from "@/app/api/${moduleName.replaceAll(
+        "_",
+        "-"
+      )}/${tableName.replaceAll("_", "-")}/interface/${tableName.replaceAll(
+        "_",
+        "-"
+      )}";`
+}
 
 interface ${tableName}PaginationTableProps {
   rows: ${entityName}[];
   onDelete: (Id: number) => void;
   onStatus: (Id: number) => void;
   onView: (Id: number) => void;
+  onListToggle: () => void;
   module: ModuleDetailsString;
-  onListToggle: (Id: number) => void;
   setList: React.Dispatch<React.SetStateAction<${entityName}[]>>;
   customPage: number;
-    customRowsPerPage: number;
-    customSetPage: React.Dispatch<React.SetStateAction<number>>;
-    customSetRowsPerPage: React.Dispatch<React.SetStateAction<number>>;
-    customTotalRecordObj: Pagination;
-    customSortBy: keyof ${entityName};
-    customSetSortBy: React.Dispatch<React.SetStateAction<keyof ${entityName}>>;
-    customOrder: ServiceOrder;
-    customSetOrder: React.Dispatch<React.SetStateAction<ServiceOrder>>;
-    pageLoading: boolean;
+  customRowsPerPage: number;
+  customSetPage: React.Dispatch<React.SetStateAction<number>>;
+  customTotalRecordObj: Pagination;
+  customSortBy: keyof ${entityName};
+  customSetSortBy: React.Dispatch<React.SetStateAction<keyof ${entityName}>>;
+  customSetRowsPerPage: (rows: number) => void;
+  customOrder: ServiceOrder;
+  customSetOrder: React.Dispatch<React.SetStateAction<ServiceOrder>>;
+  pageLoading: boolean;
 }
 
-interface TablePaginationActionsProps {
+function TablePaginationActions({
+  count,
+  page,
+  rowsPerPage,
+  onPageChange,
+}: {
   count: number;
   page: number;
   rowsPerPage: number;
@@ -205,67 +266,47 @@ interface TablePaginationActionsProps {
     event: React.MouseEvent<HTMLButtonElement>,
     newPage: number
   ) => void;
-}
-
-function TablePaginationActions(props: TablePaginationActionsProps) {
-  const theme = useTheme();
-  const { count, page, rowsPerPage, onPageChange } = props;
-
-  const handleFirstPageButtonClick = (event: any) => {
-    onPageChange(event, 0);
-  };
-
-  const handleBackButtonClick = (event: any) => {
-    onPageChange(event, page - 1);
-  };
-
-  const handleNextButtonClick = (event: any) => {
-    onPageChange(event, page + 1);
-  };
-
-  const handleLastPageButtonClick = (event: any) => {
-    onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
-  };
-
+}) {
   return (
-    <Box sx={{ flexShrink: 0, ml: 2.5 }}>
-      <IconButton
-        onClick={handleFirstPageButtonClick}
+    <div className="flex items-center gap-2 ml-3">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={(e) => onPageChange(e, 0)}
         disabled={page === 0}
-        aria-label="first page"
       >
-        {theme.direction === "rtl" ? <LastPageIcon /> : <FirstPageIcon />}
-      </IconButton>
-      <IconButton
-        onClick={handleBackButtonClick}
+        <ChevronsLeft className="h-4 w-4" />
+      </Button>
+
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={(e) => onPageChange(e, page - 1)}
         disabled={page === 0}
-        aria-label="previous page"
       >
-        {theme.direction === "rtl" ? (
-          <KeyboardArrowRight />
-        ) : (
-          <KeyboardArrowLeft />
-        )}
-      </IconButton>
-      <IconButton
-        onClick={handleNextButtonClick}
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={(e) => onPageChange(e, page + 1)}
         disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="next page"
       >
-        {theme.direction === "rtl" ? (
-          <KeyboardArrowLeft />
-        ) : (
-          <KeyboardArrowRight />
-        )}
-      </IconButton>
-      <IconButton
-        onClick={handleLastPageButtonClick}
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={(e) =>
+          onPageChange(e, Math.max(0, Math.ceil(count / rowsPerPage) - 1))
+        }
         disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="last page"
       >
-        {theme.direction === "rtl" ? <FirstPageIcon /> : <LastPageIcon />}
-      </IconButton>
-    </Box>
+        <ChevronsRight className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }
 
@@ -274,110 +315,118 @@ const List: React.FC<${tableName}PaginationTableProps> = ({
   onDelete,
   onStatus,
   onView,
-  module,
-  onListToggle,
   setList,
   customPage,
   customRowsPerPage,
   customSetPage,
-  customSetRowsPerPage,
   customTotalRecordObj,
-  customSortBy,
-  customSetSortBy,
-  customOrder,
-  customSetOrder,
+   customSetRowsPerPage, 
   pageLoading,
 }) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
+  const router = useRouter();
+
+   const searchParams = useSearchParams();
+  
+   ${visibleFields
+  .filter(
+    (f) =>
+      f.specificControl === "Radio" ||
+      f.specificControl === "NormalDropDown"
+  )
+  .map(
+    (f) => `
+const [${f.name}, set${f.name.charAt(0).toUpperCase() + f.name.slice(1)}] = React.useState<any[]>([]);
+`
+  )
+  .join("\n")}
+
+  // read page from url
+  React.useEffect(() => {
+    const pageParam = searchParams.get("page");
+    if (pageParam) {
+      customSetPage(Number(pageParam) - 1);
+    }
+  }, [searchParams]);
+  
+${visibleFields
+  .filter(
+    (f) =>
+      f.specificControl === "Radio" ||
+      f.specificControl === "NormalDropDown"
+  )
+  .map((f) => {
+    const setter =
+      f.name.charAt(0).toUpperCase() + f.name.slice(1);
+
+    const parts = f.refTable?.split("_lookup_") || [];
+    const modulePart = parts[0] + "_lookup";
+    const tablePart = parts[1];
+
+    const moduleSlug = modulePart.replaceAll("_", "-");
+    const tableSlug = tablePart.replaceAll("_", "-");
+
+    return `
+React.useEffect(() => {
+  const fetch${setter} = async () => {
+    const res = await fetch("/api/${moduleSlug}/${tableSlug}?pageSize=9999");
+    const data = await res.json();
+    set${setter}(data.data || []);
   };
 
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [deleteId, setDeleteId] = React.useState<number | null>(null);
-  const [deleteopen, setdeleteopen] = React.useState(false);
-
-  const [openRowId, setOpenRowId] = React.useState<number | null>(null);
+  fetch${setter}();
+}, []);
+`;
+  })
+  .join("\n")}
+  
+  // update url when page changes
+  const updatePageInUrl = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", (page + 1).toString());
+    router.push("?" + params.toString());
+  };
 
   const [searchText, setSearchText] = React.useState("");
-    const debouncedSearch = useDebounce(searchText, 300);
-    const [statusFilter, setStatusFilter] = React.useState<
-      "all" | "active" | "suspended"
-    >("all");
+  const debouncedSearch = useDebounce(searchText, 300);
+  const [statusFilter, setStatusFilter] = React.useState<
+    "all" | "active" | "suspended"
+  >("all");
 
+  const [deleteId, setDeleteId] = React.useState<number | null>(null);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
 
-    const router = useRouter();
-    const pathname = usePathname();
-  
-    const handleMenuClick = (
-      event: React.MouseEvent<HTMLElement>,
-      rowId: number
-    ) => {
-      setAnchorEl(event.currentTarget);
-      setOpenRowId(rowId);
-    };
-  
-    const handleMenuClose = () => {
-      setAnchorEl(null);
-      setOpenRowId(null);
-    };
-  
-
-  const handleDelete = (Id: number) => {
-    handleClickOpen(Id);
+  const handleDelete = (id: number) => {
+    setDeleteId(id);
+    setDeleteOpen(true);
   };
 
-  const handleClickOpen = (Id: number) => {
-    setDeleteId(Id);
-    setdeleteopen(true);
-  };
-  const handleCloseDelete = () => {
-    setDeleteId(null);
-    setdeleteopen(false);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (deleteId !== null) {
-      onDelete(deleteId);
+  const handleDeleteConfirm = () => {
+   if (deleteId !== null) {
+    onDelete(deleteId);
+ if (filteredRows.length === 1 && customPage > 0) {
+      const newPage = customPage - 1;
+      customSetPage(newPage);
+      updatePageInUrl(newPage);
     }
-    handleCloseDelete();
+  }
+        setDeleteId(null);
+    setDeleteOpen(false);
   };
-
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
-
-  const handleChangePage = (event: any, newPage: any) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: any) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-  const handleSort = (property: keyof ${entityName}) => {
-      
-      const isAsc = customSortBy === property && customOrder === "asc";
-      customSetOrder(isAsc ? "desc" : "asc");
-      customSetSortBy(property);
-    };
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const startIndex = page * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
+    const startIndex = customPage * customRowsPerPage;
+    const endIndex = startIndex + customRowsPerPage;
 
     const currentPageRows = rows.slice(startIndex, endIndex);
     const reorderedPageRows = Array.from(currentPageRows);
+
     const [removed] = reorderedPageRows.splice(result.source.index, 1);
     reorderedPageRows.splice(result.destination.index, 0, removed);
 
     const updatedRows = [...rows];
+
     updatedRows.splice(
       startIndex,
       reorderedPageRows.length,
@@ -387,517 +436,268 @@ const List: React.FC<${tableName}PaginationTableProps> = ({
     setList(updatedRows);
   };
 
-          const filteredRows = React.useMemo(() => {
-              return rows.filter((row) => {
-                if (statusFilter === "active" && !row.is_active) return false;
-                if (statusFilter === "suspended" && row.is_active) return false;
-          
-                if (debouncedSearch) {
-                  const search = debouncedSearch.toLowerCase();
-                  return Object.values(row).some((value) =>
-                    value?.toString().toLowerCase().includes(search)
-                  );
-                }
-          
-                return true;
-              });
-            }, [rows, statusFilter, debouncedSearch]);
 
-
-            
-  //const paginatedRows  = rows;
   
-       if (rows.length === 0 && !pageLoading) {
-          return (
-            <EmptyState
-              title="You haven't created any ${toPascalCaseText(tableName)} yet"
-              description="Assign folder and dashboard permissions to teams instead of users to ease administration."
-              buttonText="New ${toPascalCaseText(tableName)}"
-              buttonHref={${
-                isChildPage
-                  ? `\`/apps/${moduleName
-                      .toLowerCase()
-                      .replaceAll("_", "-")}/${mainTable
-                      .toLowerCase()
-                      .replaceAll(
-                        "_",
-                        "-"
-                      )}/\${module.mainServiceId}/${tableName
-                      .toLowerCase()
-                      .replaceAll("_", "-")}/new\``
-                  : `\`/apps/${moduleName
-                      .toLowerCase()
-                      .replaceAll("_", "-")}/${tableName
-                      .toLowerCase()
-                      .replaceAll("_", "-")}/new\``
-              }}
-            />
-          );
-          }
+const filteredRows = rows.filter((row) => {
+  if (statusFilter === "active" && !row.is_active) return false;
+  if (statusFilter === "suspended" && row.is_active) return false;
 
+  if (debouncedSearch) {
+    const search = debouncedSearch.toLowerCase();
+    return Object.values(row).some((value) =>
+      value?.toString().toLowerCase().includes(search)
+    );
+  }
 
+  return true;
+});
+
+  if (rows.length === 0 && !pageLoading) {
+    return (
+      <EmptyState
+        title={\`You haven't created any ${toPascalCaseText(tableName)} yet\`}
+        description="Create your first record to get started."
+        buttonText={\`New ${toPascalCaseText(tableName)}\`}
+       buttonHref="/dashboard/${moduleName.replaceAll("_","-")}/${tableName.replaceAll("_","-")}/new"
+        
+      />
+    );
+  }
 
   return (
     <>
- 
-            <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  mb={5}
+      <div className="flex items-center justify-between mb-6">
+                <Link
+                  href="/dashboard/${moduleName.replaceAll("_","-")}/${tableName.replaceAll("_","-")}/new"
                 >
-                  <Box>
-                    <Link href={${
-                      isChildPage
-                        ? `\`/apps/${moduleName
-                            .toLowerCase()
-                            .replaceAll("_", "-")}/${mainTable
-                            .toLowerCase()
-                            .replaceAll(
-                              "_",
-                              "-"
-                            )}/\${module.mainServiceId}/${tableName
-                            .toLowerCase()
-                            .replaceAll("_", "-")}/new\``
-                        : `\`/apps/${moduleName
-                            .toLowerCase()
-                            .replaceAll("_", "-")}/${tableName
-                            .toLowerCase()
-                            .replaceAll("_", "-")}/new\``
-                    }} passHref>
-                      <Button color="primary" variant="contained"  startIcon={
-                                      <AddCircleOutlineIcon
-                                        fontSize="medium"
-                                        sx={{ marginRight: 0.5 }}
-                                      />
-                                    } >
-                        Add New ${toPascalCaseText(tableName)}
-                      </Button>
-                    </Link>
-                  </Box>
-          
-                  <Stack direction="row" spacing={2}>
-                    <Button variant="outlined" color="primary">
-                      Export
-                    </Button>
-                    <Button variant="outlined" color="secondary">
-                      Import
-                    </Button>
-                  </Stack>
-                </Stack>
+                  <Button className="min-w-[150px]">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add New One Table
+                  </Button>
+                </Link>
 
+        <div className="flex gap-2">
+          <Button variant="outline">Export</Button>
+          <Button variant="outline">Import</Button>
+        </div>
+      </div>
 
-      <Box mt="-20px">
-        <PageContainer
-          title={\`\${module.subkeyWord}\${module.keyWord}\`}
-          description={\`\${module.subkeyWord}\${module.keyWord}\`}
+      <div className="flex justify-between items-center mb-4">
+        <Input
+          placeholder="Search..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          className="w-64"
+        />
+
+        <RadioGroup
+          value={statusFilter}
+          onValueChange={(value) =>
+            setStatusFilter(value as "all" | "active" | "suspended")
+          }
+          className="flex gap-6"
         >
-          <ParentCard title="All ${toPascalCaseText(tableName)}">
-            <BlankCard>
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="all" id="all" />
+            <Label htmlFor="all">All</Label>
+          </div>
 
-              <Box
-                              display="flex"
-                              justifyContent="space-between"
-                              alignItems="center"
-                              mb={2}
-                              mt={2}
-                              mx={2}
-                            >
-                              <TextField
-                                size="small"
-                                label="Search..."
-                                variant="outlined"
-                                value={searchText}
-                                onChange={(e) => setSearchText(e.target.value)}
-                                sx={{ width: 250 }}
-                              />
-            
-                              <RadioGroup
-                                row
-                                value={statusFilter}
-                                onChange={(e) =>
-                                  setStatusFilter(
-                                    e.target.value as "all" | "active" | "suspended"
-                                  )
-                                }
-                              >
-                                <FormControlLabel
-                                  value="all"
-                                  control={
-                                    <Radio
-                                      sx={{
-                                        color: 'primary.main',
-                                        "&.Mui-checked": {
-                                          color: 'primary.main',
-                                        },
-                                      }}
-                                    />
-                                  }
-                                  label="All"
-                                />
-                                <FormControlLabel
-                                  value="active"
-                                  control={
-                                    <Radio
-                                      sx={{
-                                        color: 'secondary.main',
-                                        "&.Mui-checked": {
-                                          color:'secondary.main',
-                                        },
-                                      }}
-                                    />
-                                  }
-                                  label="Active"
-                                />
-                                <FormControlLabel
-                                  value="suspended"
-                                  control={
-                                    <Radio
-                                      sx={{
-                                        color: 'error.main',
-                                        "&.Mui-checked": {
-                                          color: 'error.main',
-                                        },
-                                      }}
-                                    />
-                                  }
-                                  label="Suspended"
-                                />
-                              </RadioGroup>
-                            </Box>
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="active" id="active" />
+            <Label htmlFor="active">Active</Label>
+          </div>
 
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="suspended" id="suspended" />
+            <Label htmlFor="suspended">Suspended</Label>
+          </div>
+        </RadioGroup>
+      </div>
 
-              <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
-                <Table
-                  aria-label="custom pagination table"
-                  stickyHeader
-                  sx={{ whiteSpace: "nowrap" }}
+      <div className="overflow-auto max-h-[600px] mt-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Sr No.</TableHead>
+              ${headers.map((h) => `<TableHead>${h.pascalName}</TableHead>`).join("\n")}
+              <TableHead>Status</TableHead>
+              {/*<TableHead>Used/Unused</TableHead>*/}
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="table-body">
+              {(provided) => (
+                <TableBody
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
                 >
-                  <TableHead>
+                  {pageLoading ? (
                     <TableRow>
-                     <TableCell
-                                               sortDirection={
-                                                 customSortBy === "id" ? customOrder : false
-                                               }
-                                             >
-                                               <TableSortLabel
-                                                 active={customSortBy === "id"}
-                                                 direction={
-                                                   customSortBy === "id" ? customOrder : "asc"
-                                                 }
-                                                 onClick={() => handleSort("id")}
-                                               >
-                                               Sr No.
-                                               </TableSortLabel>
-                                             </TableCell>
-                                             
-
-                                            
-                      ${headers
-                        .map(
-                          (header) => `
-                       <TableCell
-                                               sortDirection={
-                                                 customSortBy === "${header.small_case}" ? customOrder : false
-                                               }
-                                             >
-                                               <TableSortLabel
-                                                 active={customSortBy === "${header.small_case}"}
-                                                 direction={
-                                                   customSortBy === "${header.small_case}" ? customOrder : "asc"
-                                                 }
-                                                 onClick={() => handleSort("${header.small_case}")}
-                                               >
-                                                ${header.pascalName}
-                                               </TableSortLabel>
-                                             </TableCell>
-                       
-                          `
-                        )
-                        .join("")}
-                         <TableCell
-                                               sortDirection={
-                                                 customSortBy === "is_active" ? customOrder : false
-                                               }
-                                             >
-                                               <TableSortLabel
-                                                 active={customSortBy === "is_active"}
-                                                 direction={
-                                                   customSortBy === "is_active" ? customOrder : "asc"
-                                                 }
-                                                 onClick={() => handleSort("is_active")}
-                                               >
-                                               Status
-                                               </TableSortLabel>
-                                             </TableCell>
-                                             <TableCell>
-                                               Used/UnUsed
-                                             </TableCell>
-                      <TableCell>
-                        <Typography variant="h6">Actions</Typography>
+                      <TableCell colSpan={5} className="text-center py-6">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                       </TableCell>
                     </TableRow>
-                  </TableHead>
+                  ) : filteredRows.length > 0 ? (
+                    filteredRows.map((row, index) => (
+                      <Draggable
+                        key={row.id.toString()}
+                        draggableId={row.id.toString()}
+                        index={index}
+                      >
+                        {(provided) => (
+                          <TableRow
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <TableCell>{index + 1}</TableCell>
 
-                  <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="table-body">
-                      {(provided) => (
-                        <TableBody
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                        >
-                          {pageLoading ? (
-                                                     <TableRow>
-                                                       <TableCell colSpan={15} align="center">
-                                                         <Box
-                                                           display="flex"
-                                                           justifyContent="center"
-                                                           py={3}
-                                                         >
-                                                           <CircularProgress size={32} />
-                                                         </Box>
-                                                       </TableCell>
-                                                     </TableRow>
-                                                   ) : filteredRows.length > 0 ? (
-                            filteredRows.map((row, indx) => (
-                            <Draggable
-                              key={row.id.toString()}
-                              draggableId={row.id.toString()}
-                              index={indx}
-                            >
-                              {(provided, snapshot) => (
-                                <TableRow
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  style={{
-                                    ...provided.draggableProps.style,
-                                    background: snapshot.isDragging
-                                      ? "#f5f5f5"
-                                      : "inherit",
-                                  }}
-                                >
-                                  <TableCell>
-                                    <Typography variant="subtitle2">
-                                      {indx + 1}
-                                    </Typography>
-                                  </TableCell>
+                            ${tableCells}
 
-                                
+                      
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={row.is_active}
+                                  onCheckedChange={() => onStatus(row.id)}
+                                />
+                                <span className="text-sm">
+                                  {row.is_active ? "Active" : "Suspended"}
+                                </span>
+                              </div>
+                            </TableCell>
 
-                                  ${tableCells}
+                             {/* <TableCell>
+                              <StatusBadge
+                                label={row.is_used ? "Used" : "Unused"}
+                              />
+                            </TableCell> */}
 
-
-                                     <TableCell>
-                                                                     <MenuItem onClick={() => onStatus(row.id)}>
-                                                                       <Box
-                                                                         sx={{
-                                                                           backgroundColor: row.is_active
-                                                                             ? (theme) =>
-                                                                                 theme.palette.success.main
-                                                                             : (theme) =>
-                                                                                 theme.palette.error.main,
-                                                                           borderRadius: "100%",
-                                                                           height: "10px",
-                                                                           width: "10px",
-                                                                         }}
-                                                                       />
-                                                                       <Typography
-                                                                         color="textSecondary"
-                                                                         variant="subtitle2"
-                                                                         sx={{
-                                                                           ml: 1,
-                                                                         }}
-                                                                       >
-                                                                         {row.is_active ? "Active" : "Suspended"}
-                                                                       </Typography>
-                                                                     </MenuItem>
-                                                                   </TableCell>
-                                                                     <TableCell> 
-                                                                       <StatusBadge  label={row.is_used ? "used" : "Unused"} />
-                                                                     </TableCell>
-
-<TableCell>
-                                    <IconButton
-                                      aria-label="more"
-                                      id={\`long-button-/\${row.id}\`}
-                                      aria-controls={
-                                        open ? \`long-menu-/\${row.id}\` : undefined
-                                      }
-                                      aria-expanded={open ? "true" : undefined}
-                                      aria-haspopup="true"
-                                      onClick={(e) =>
-                                        handleMenuClick(e, row.id)
-                                      }
-                                    >
-                                      <MoreVertIcon />
-                                    </IconButton>
-                                    <Menu
-                                      id={\`long-menu-/\${row.id}\`}
-                                      anchorEl={anchorEl}
-                                      open={openRowId === row.id}
-                                      onClose={handleMenuClose}
-                                      PaperProps={{
-                                        style: {
-                                          maxHeight: 48 * 4.5,
-                                          width: "20ch",
-                                        },
-                                      }}
-                                    >
-                                      <MenuItem
-                                        onClick={() => {
-                                          handleMenuClose();
-                                          router.push(${
-                                            isChildPage
-                                              ? `\`/apps/${moduleName
-                                                  .toLowerCase()
-                                                  .replaceAll(
-                                                    "_",
-                                                    "-"
-                                                  )}/${mainTable
-                                                  .toLowerCase()
-                                                  .replaceAll(
-                                                    "_",
-                                                    "-"
-                                                  )}/\${module.mainServiceId}/${tableName
-                                                  .toLowerCase()
-                                                  .replaceAll(
-                                                    "_",
-                                                    "-"
-                                                  )}/\${row.id}\``
-                                              : `\`/apps/${moduleName
-                                                  .toLowerCase()
-                                                  .replaceAll(
-                                                    "_",
-                                                    "-"
-                                                  )}/${tableName
-                                                  .toLowerCase()
-                                                  .replaceAll(
-                                                    "_",
-                                                    "-"
-                                                  )}/\${row.id}\``
-                                          }
-                                            
-                                          );
-                                        }}
-                                      >
-                                        <ListItemIcon>
-                                          <IconEdit width={18} />
-                                        </ListItemIcon>
-                                        Edit
-                                      </MenuItem>
-                                      <MenuItem
-                                        onClick={() => {
-                                          handleMenuClose();
-                                          handleDelete(row.id);
-                                        }}
-                                      >
-                                        <ListItemIcon>
-                                          <IconTrash width={18} />
-                                        </ListItemIcon>
-                                        Delete
-                                      </MenuItem>
-                                    </Menu>
-                                  </TableCell>
-
- 
-
-
-                                </TableRow>
-                              )}
-                            </Draggable>
-                          ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={4} align="center">
-                                <Box
-                                  display="flex"
-                                  flexDirection="column"
-                                  alignItems="center"
-                                  py={3}
-                                >
-                                  <Typography
-                                    variant="subtitle1"
-                                    color="textSecondary"
-                                  >
-                                    No records found
-                                  </Typography>
-                                  <Button
-                                    variant="outlined"
-                                    color="primary"
-                                    size="small"
-                                    sx={{ mt: 1 }}
-                                    onClick={() => {
-                                      setSearchText("");
-                                      setStatusFilter("all");
-                                    }}
-                                  >
-                                    Reset Filters
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="icon" variant="ghost">
+                                    <MoreVertical className="h-4 w-4" />
                                   </Button>
-                                </Box>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                          {provided.placeholder}
+                                </DropdownMenuTrigger>
 
-                          {emptyRows > 0 && (
-                            <TableRow style={{ height: 53 * emptyRows }}>
-                              <TableCell colSpan={${
-                                visibleFields.length + 3
-                              }} />
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
-                </Table>
-                <TableFooter>
-                  <TableRow>
-                    <TablePagination
-                      component="div"
-                      count={customTotalRecordObj?.totalRecords}
-                      page={customPage}
-                      onPageChange={(_, newPage) => customSetPage(newPage)}
-                      rowsPerPage={customRowsPerPage}
-                      onRowsPerPageChange={(e) => {
-                        customSetRowsPerPage(parseInt(e.target.value, 10));
-                        customSetPage(0);
-                      }}
-                      rowsPerPageOptions={[5, 10, 20, 50]}
-                      ActionsComponent={TablePaginationActions}
-                    />
-                  </TableRow>
-                </TableFooter>
-              </TableContainer>
-            </BlankCard>
-          </ParentCard>
-        </PageContainer>
-      </Box>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                        onClick={() => router.push(\`/dashboard/${moduleName.replaceAll("_","-")}/${tableName.replaceAll("_","-")}/\${row.id}\`)}                                  >
+                                    Edit
+                                  </DropdownMenuItem>
 
-      <Dialog
-        open={deleteopen}
-        onClose={handleCloseDelete}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">
-          {process.env.NEXT_PUBLIC_REACT_APP_DELETE_CONFIRMATION}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            {process.env.NEXT_PUBLIC_REACT_APP_DELETE_MSG}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button color="error" onClick={handleCloseDelete}>
-            No
-          </Button>
-          <Button onClick={handleDeleteConfirm} autoFocus>
-            Yes
-          </Button>
-        </DialogActions>
-      </Dialog>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleDelete(row.id)
+                                    }
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Draggable>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6">
+                        No records found
+                        <div className="mt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSearchText("");
+                              setStatusFilter("all");
+                            }}
+                          >
+                            Reset Filters
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {provided.placeholder}
+                </TableBody>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </Table>
+      </div>
+
+<div className="flex items-center justify-end gap-6 p-4 border-t">
+
+  {/* Rows per page */}
+  <div className="flex items-center gap-2">
+    <span className="text-sm text-muted-foreground">
+      Rows per page:
+    </span>
+
+    <Select
+      value={customRowsPerPage.toString()}
+      onValueChange={(value) => {
+        const rows = Number(value);
+        customSetRowsPerPage(rows);
+        customSetPage(0);
+        updatePageInUrl(0);
+      }}
+    >
+      <SelectTrigger className="w-[80px]">
+        <SelectValue />
+      </SelectTrigger>
+
+      <SelectContent>
+        <SelectItem value="5">5</SelectItem>
+        <SelectItem value="10">10</SelectItem>
+        <SelectItem value="25">25</SelectItem>
+        <SelectItem value="50">50</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+
+  {/* Page number */}
+  <span className="text-sm text-muted-foreground">
+    Page {customPage + 1}
+  </span>
+
+  {/* Pagination buttons */}
+  <TablePaginationActions
+    count={customTotalRecordObj?.totalRecords ?? 0}
+    page={customPage}
+    rowsPerPage={customRowsPerPage}
+    onPageChange={(_, newPage) => {
+      customSetPage(newPage);
+      updatePageInUrl(newPage);
+    }}
+  />
+
+</div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete Confirmation
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this record?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              Yes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
@@ -905,9 +705,7 @@ const List: React.FC<${tableName}PaginationTableProps> = ({
 export default List;
 `;
   if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, content, "utf8");
-    console.log(`✅ Generated list.tsx for ${moduleName}/${tableName}`);
-  } else {
-    console.log(`⏭️ Skipped ${filePath} (already exists)`);
-  }
+  fs.writeFileSync(filePath, content, "utf8");
 }
+}
+

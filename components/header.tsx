@@ -18,7 +18,7 @@ import DirectionToggle from "@/components/direction-toggle";
 
 export default function Header() {
   return (
-     <header className="fixed top-0 left-0 right-0 h-14 border-b bg- flex items-center justify-between px-4 z-50">
+        <header className="fixed top-0 left-0 right-0 h-14 border-b bg-background flex items-center justify-between px-4 z-50">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold">My Application</h1>
             <SidebarTrigger />

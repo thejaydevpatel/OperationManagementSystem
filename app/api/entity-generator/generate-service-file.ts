@@ -9,8 +9,7 @@ export function generateServiceFile(
 ) {
   const dirPath = path.join(
     process.cwd(),
-    "src",
-    "app",
+     "app",
     "components",
     moduleName.replaceAll("_", "-"),
     tableName.replaceAll("_", "-")
@@ -29,54 +28,99 @@ export function generateServiceFile(
     return;
   }
 
-  //   // Capitalize and PascalCase the tableName for function naming
-  //   const pascalTableName = tableName
-  //     .split("_")
-  //     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-  //     .join("");
-
   const interfaceName =
     tableName
       .split("_")
       .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
       .join("") + "Entity";
 
-  const content = `import { ModuleDetailsString } from "@/app/(DashboardLayout)/types/module-details/ModuleDetails";
-import HttpService from "@/app/http-service/http-service";
+  const content = `
+import { Pagination } from "@/app/api/utils/send-response";
+import { ModuleDetailsString } from "@/app/(DashboardLayout)/types/module-details/ModuleDetails";
+import HttpService from "@/app/services/http-service";
+${
+  isChildPage
+    ? `import { ${interfaceName} } from "@/app/api/${moduleName.replaceAll(
+        "_",
+        "-"
+      )}/${mainTable.replaceAll("_", "-")}/[id]/${tableName.replaceAll(
+        "_",
+        "-"
+      )}/interface/${tableName.replaceAll("_", "-")}";`
+    : `import { ${interfaceName} } from "@/app/api/${moduleName.replaceAll(
+        "_",
+        "-"
+      )}/${tableName.replaceAll("_", "-")}/interface/${tableName.replaceAll(
+        "_",
+        "-"
+      )}";`
+}
+
+/**
+ * Generic API Response Wrapper
+ * Adjust "status" type if your backend returns number instead of string
+ */
+export interface ApiResponse<T> {
+  status: string; // change to number if backend returns number
+  message: string;
+  data: T;
+  pagination: Pagination;
+}
 
 export const get${interfaceName}Api = (module: ModuleDetailsString) => {
   const api = HttpService(module.endPoint);
 
-  return {
-    fetchAll: async (query: string = "") => {
-      const res = await api.get(query);
-      return res;
-    },
-    fetchById: async (id: any) => {
-      const res = await api.getById(id);
-      return res;
-    },
-    create: async (data: any) => {
-      const res = await api.create(data);
-      return res;
-    },
-    delete: async (id: any) => {
-      const res = await api._delete(id);
-      return res;
-    },
-    changeStatus: async (id: any) => {
-      const res = await api.changeStatus(id);
-      return res;
-    },
-    update: async (id: any, data: any) => {
-      const res = await api.update(id, data);
-      return res;
-    },
-    onListFlag: async (id: any) => {
-      const res = await api.changeStatus(id);
-      return res;
-    },
-  };
+   return {
+      // LIST
+      fetchAll: async (
+        query: string = ""
+      ): Promise<ApiResponse<${interfaceName}[]>> => {
+        return await api.get<ApiResponse<${interfaceName}[]>>(query);
+      },
+  
+      // GET BY ID
+      fetchById: async (
+        id: number | string
+      ): Promise<ApiResponse<${interfaceName}>> => {
+        return await api.getById<ApiResponse<${interfaceName}>>(id);
+      },
+  
+      // CREATE
+      create: async (
+        data: ${interfaceName}
+      ): Promise<ApiResponse<number>> => {
+        return await api.create<ApiResponse<number>>(data);
+      },
+  
+      // UPDATE
+      update: async (
+        id: number | string,
+        data: ${interfaceName}
+      ): Promise<ApiResponse<void>> => {
+        return await api.update<ApiResponse<void>>(id, data);
+      },
+  
+      // DELETE
+      delete: async (
+        id: number | string
+      ): Promise<ApiResponse<void>> => {
+        return await api.delete<ApiResponse<void>>(id);
+      },
+  
+      // CHANGE STATUS
+      changeStatus: async (
+        id: number | string
+      ): Promise<ApiResponse<void>> => {
+        return await api.changeStatus<ApiResponse<void>>(id);
+      },
+  
+      // LIST FLAG (same as changeStatus)
+      onListFlag: async (
+        id: number | string
+      ): Promise<ApiResponse<void>> => {
+        return await api.changeStatus<ApiResponse<void>>(id);
+      },
+    };
 };
 `;
   if (!fs.existsSync(filePath)) {

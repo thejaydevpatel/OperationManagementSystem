@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { getDbConnection } from "../../api/config/postgres-db";
+import generateApiFiles from "./generate-route-file";
+import { generateUseServiceFile } from "./generate-hook-file";
+import { generateServiceFile } from "./generate-service-file";
+import { generateListComponent } from "./generate-list-file";
+import { generateMainComponentFile } from "./generate-main-component-file ";
 import { generatePageFiles } from "./generate-page-files";
-// import generateApiFiles from "./generate-route-file";
-// import { generateUseServiceFile } from "./generate-hook-file";
-// import { generateServiceFile } from "./generate-service-file";
-// import { generateListComponent } from "./generate-list-file";
-// import { generateMainComponentFile } from "./generate-main-component-file ";
-// import { generatePageFiles } from "./generate-page-files";
 
 type FieldType = {
   name: string;
@@ -37,7 +36,7 @@ export async function POST(req: Request) {
       isSchemaOnly,
       isChildPage,
       mainTable,
-      // mainId,
+      mainId,
     }: {
       dbName: string;
       moduleName: string;
@@ -152,15 +151,15 @@ export async function POST(req: Request) {
       if (field.constraints) colDef += ` ${field.constraints}`;
 
       columnDefs.push(colDef);
+ 
+      // disable  for fk constraint.............................................................!!!!!!!!!!!!!!!!!!!!!
 
-      // disable  for fk constraint...............................................................................!!!!!!!!!!!!!!!!!!!!!!111
-
-      // if (field.foreignKey && field.refTable && field.refColumn) {
-      //   let fk = `FOREIGN KEY ("${field.name}") REFERENCES "${field.refTable}"("${field.refColumn}")`;
-      //   if (field.onDeleteCascade) fk += " ON DELETE CASCADE";
-      //   if (field.onUpdateCascade) fk += " ON UPDATE CASCADE";
-      //   fkConstraints.push(fk);
-      // }
+      if (field.foreignKey && field.refTable && field.refColumn) {
+        let fk = `FOREIGN KEY ("${field.name}") REFERENCES "${field.refTable}"("${field.refColumn}")`;
+        if (field.onDeleteCascade) fk += " ON DELETE CASCADE";
+        if (field.onUpdateCascade) fk += " ON UPDATE CASCADE";
+        fkConstraints.push(fk);
+      }
 
     });
 
@@ -207,55 +206,55 @@ export async function POST(req: Request) {
 
     // ✅ Generate CRUD API route file if missing
     const pageFile = generatePageFiles(
-      moduleName,
+      moduleName, 
       tableName,
       isChildPage,
       mainTable
     );
 
-    // const apiRouteFiles = generateApiFiles(
-    //   moduleName,
-    //   tableName,
-    //   fields,
-    //   getDbEnv(dbName),
-    //   isChildPage,
-    //   mainTable,
-    //   mainId
-    // );
-    // const useService = generateUseServiceFile(
-    //   moduleName,
-    //   tableName,
-    //   fields,
-    //   isChildPage,
-    //   mainTable
-    // );
-    // const serviceFile = generateServiceFile(
-    //   moduleName,
-    //   tableName,
-    //   isChildPage,
-    //   mainTable
-    // );
-    // const listFile = generateListComponent(
-    //   moduleName,
-    //   tableName,
-    //   fields,
-    //   isChildPage,
-    //   mainTable
-    // );
-    // const mainFile = generateMainComponentFile(
-    //   moduleName,
-    //   tableName,
-    //   fields,
-    //   isChildPage,
-    //   mainTable
-    // );
+    const apiRouteFiles = generateApiFiles(
+      moduleName,
+      tableName,
+      fields,
+     "PGDB_NAME_COMMON",
+      isChildPage,
+      mainTable,
+      mainId
+    );
+    const useService = generateUseServiceFile(
+      moduleName,
+      tableName,
+      fields,
+      isChildPage,
+      mainTable
+    );
+    const serviceFile = generateServiceFile(
+      moduleName,
+      tableName,
+      isChildPage,
+      mainTable
+    );
+    const listFile = generateListComponent(
+      moduleName,
+      tableName,
+      fields,
+      isChildPage,
+      mainTable
+    );
+    const mainFile = generateMainComponentFile(
+      moduleName,
+      tableName,
+      fields,
+      isChildPage,
+      mainTable
+    );
 
     return NextResponse.json({
       message: `Table "${moduleName}_${tableName}" created in database ${dbName} successfully`,
       sql: createTableSQL,
-     // fileOutput: apiRouteFiles,
-    //  useService: useService,
-     // serviceFile: serviceFile,
+     fileOutput: apiRouteFiles,
+     useService: useService,
+     serviceFile: serviceFile,
     });
   }catch (error: unknown) {
     console.error("POST /entity-generator error:", error);

@@ -200,7 +200,7 @@ const StatusCategory = () => {
       </Dialog>
 
       {/* Table to display status categories */}
-      {data.list.length > 0 && (
+      {data.list.length > 0 ? (
         <div className="mt-4  overflow-x-auto sm:max-w-6xl mx-auto">
           <div className="mb-6 sm:max-w-6xl mx-auto flex justify-end items-center">
             <Input
@@ -381,6 +381,11 @@ const StatusCategory = () => {
               </div>
 
             </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center mt-16 gap-4 text-gray-500">
+          <p className="text-lg font-medium">No records found</p>
+          <p className="text-sm">Click below to add your first record</p>
         </div>
       )}
     </div>

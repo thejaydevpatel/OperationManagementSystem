@@ -1,0 +1,27 @@
+export interface OperationJobsTableEntity {
+  is_used?: boolean;
+  is_deleted?: boolean;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
+  host_ip?: string;
+  url?: string;
+  deleted_at?: string;
+  deleted_by?: string;
+  tenant_id?: string;
+  id: number;
+  external_booking_id: string;
+  booking_type: string;
+  service_type: string;
+  pax: number;
+  vehicle_type_required?: number;
+  pickup_location_id: number;
+  dropoff_location_id?: number;
+  scheduled_start_time: string;
+  scheduled_end_time?: string;
+  job_status_id: number;
+  priority: number;
+  notes?: string;
+}

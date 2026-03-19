@@ -91,10 +91,10 @@ const systemFields: FieldType[] = [
   {
     name: "is_active",
     type: "BOOLEAN",
-    nullable: true,
+    nullable: false,
     primaryKey: false,
     identity: false,
-    defaultValue: "false",
+    defaultValue: "true",
     constraints: "",
     system: true,
     toShowOnLayout: false,
@@ -207,7 +207,7 @@ const systemFields: FieldType[] = [
     system: true,
     foreignKey: true, // NEW
     refTable: "tenants", // NEW
-    refColumn: "tenant_id", // NEW
+    refColumn: "id", // NEW
     onDeleteCascade: false, // you can set true if needed
     onUpdateCascade: false, // you can set true if needed
     toShowOnLayout: false,
