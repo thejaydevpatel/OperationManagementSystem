@@ -162,6 +162,9 @@ const List: React.FC<supplier_master_tablePaginationTableProps> = ({
    const searchParams = useSearchParams();
   
    
+const [supplier_type, setSupplier_type] = React.useState<any[]>([]);
+
+
 const [status_id, setStatus_id] = React.useState<any[]>([]);
 
 
@@ -173,6 +176,17 @@ const [status_id, setStatus_id] = React.useState<any[]>([]);
     }
   }, [searchParams]);
   
+
+React.useEffect(() => {
+  const fetchSupplier_type = async () => {
+    const res = await fetch("/api/supplier-types-lookup/supplier-types-table?pageSize=9999");
+    const data = await res.json();
+    setSupplier_type(data.data || []);
+  };
+
+  fetchSupplier_type();
+}, []);
+
 
 React.useEffect(() => {
   const fetchStatus_id = async () => {
@@ -278,7 +292,7 @@ const filteredRows = rows.filter((row) => {
                 >
                   <Button className="min-w-[150px]">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add New Supplier
+                    Add New One Table
                   </Button>
                 </Link>
 
@@ -325,8 +339,9 @@ const filteredRows = rows.filter((row) => {
           <TableHeader>
             <TableRow>
               <TableHead>Sr No.</TableHead>
-              <TableHead>Name</TableHead>
-<TableHead>Supplier Type</TableHead>
+              <TableHead>Supplier Type</TableHead>
+<TableHead>Name</TableHead>
+<TableHead>Service Type</TableHead>
 <TableHead>Contact Person</TableHead>
 <TableHead>Phone</TableHead>
 <TableHead>Email</TableHead>
@@ -367,51 +382,58 @@ const filteredRows = rows.filter((row) => {
                             <TableCell>{index + 1}</TableCell>
 
                             
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
+    {supplier_type.find(o => Number(o.id) === Number(row.supplier_type))?.name || "-"}
+      </p>
+    </TableCell>
+  
+
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.name}
+      {row.name || "-"}
     </p>
   </TableCell>
 
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.supplier_type}
+      {row.service_type || "-"}
     </p>
   </TableCell>
 
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.contact_person}
+      {row.contact_person || "-"}
     </p>
   </TableCell>
 
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.phone}
+      {row.phone || "-"}
     </p>
   </TableCell>
 
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.email}
+      {row.email || "-"}
     </p>
   </TableCell>
 
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.address}
+      {row.address || "-"}
     </p>
   </TableCell>
 
 
     <TableCell>
       <p className="text-muted-foreground text-sm font-normal">
-    {status_id.find(o => Number(o.id) === Number(row.status_id))?.name || ""}
+    {status_id.find(o => Number(o.id) === Number(row.status_id))?.name || "-"}
       </p>
     </TableCell>
   

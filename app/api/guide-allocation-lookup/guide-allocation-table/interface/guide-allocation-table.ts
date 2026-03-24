@@ -13,9 +13,11 @@ export interface GuideAllocationTableEntity {
   tenant_id?: string;
   id: number;
   job_id: number;
+  supplier_id: number;
   guide_id: number;
   allocation_status_id: number;
   report_time?: string;
   actual_start_time?: string;
   actual_end_time?: string;
+  extra_charge: string;
 }

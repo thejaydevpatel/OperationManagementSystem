@@ -174,6 +174,9 @@ const [dropoff_location_id, setDropoff_location_id] = React.useState<any[]>([]);
 const [job_status_id, setJob_status_id] = React.useState<any[]>([]);
 
 
+const [guide_language_required, setGuide_language_required] = React.useState<any[]>([]);
+
+
   // read page from url
   React.useEffect(() => {
     const pageParam = searchParams.get("page");
@@ -224,6 +227,17 @@ React.useEffect(() => {
   };
 
   fetchJob_status_id();
+}, []);
+
+
+React.useEffect(() => {
+  const fetchGuide_language_required = async () => {
+    const res = await fetch("/api/language-master-lookup/language-master-table?pageSize=9999");
+    const data = await res.json();
+    setGuide_language_required(data.data || []);
+  };
+
+  fetchGuide_language_required();
 }, []);
 
   
@@ -320,7 +334,7 @@ const filteredRows = rows.filter((row) => {
                 >
                   <Button className="min-w-[150px]">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add New Operation Job
+                    Add New One Table
                   </Button>
                 </Link>
 
@@ -379,6 +393,10 @@ const filteredRows = rows.filter((row) => {
 <TableHead>Job Status Id</TableHead>
 <TableHead>Priority</TableHead>
 <TableHead>Notes</TableHead>
+<TableHead>Client</TableHead>
+<TableHead>Agent</TableHead>
+<TableHead>Address</TableHead>
+<TableHead>Guide Language Required</TableHead>
               <TableHead>Status</TableHead>
               {/*<TableHead>Used/Unused</TableHead>*/}
               <TableHead>Actions</TableHead>
@@ -513,6 +531,34 @@ const filteredRows = rows.filter((row) => {
     </p>
   </TableCell>
 
+
+  <TableCell>
+    <p className="text-muted-foreground text-sm font-normal">
+      {row.client || "-"}
+    </p>
+  </TableCell>
+
+
+  <TableCell>
+    <p className="text-muted-foreground text-sm font-normal">
+      {row.agent || "-"}
+    </p>
+  </TableCell>
+
+
+  <TableCell>
+    <p className="text-muted-foreground text-sm font-normal">
+      {row.address || "-"}
+    </p>
+  </TableCell>
+
+
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
+    {guide_language_required.find(o => Number(o.id) === Number(row.guide_language_required))?.name || "-"}
+      </p>
+    </TableCell>
+  
 
                       
                             <TableCell>

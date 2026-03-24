@@ -6,7 +6,26 @@ import { FaUserTie, FaUserAlt  } from "react-icons/fa";
 import { toast } from "sonner";
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard } from "lucide-react"
+import { LayoutDashboard, ClipboardList } from "lucide-react"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+ import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { X } from "lucide-react";
+
 
 export default function AllocatePage() {
   const { bookingId } = useParams();
@@ -21,7 +40,7 @@ const [guideRows, setGuideRows] = useState<any[]>([]);
 const [tourGuides, setTourGuides] = useState<any[]>([]);
 const [languages, setLanguages] = useState<any[]>([]);
 
- const [drivers, setDrivers] = useState([]);
+const [drivers, setDrivers] = useState([]);
 const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 const [suppliers, setSuppliers] = useState([]);
 
@@ -40,7 +59,8 @@ const fetchDriverAllocation = async (jobId: number) => {
         noOfVehicles: 1,
         vehicle: "",
         driver: "",
-        manualCost: ""
+        manualCost: "",
+        remark:""
       }
     ]);
   }
@@ -56,6 +76,7 @@ const fetchGuideAllocation = async (jobId: number) => {
     setGuideRows([
       {
         dutySlipNo: "",
+        suppliers:"",
         noOfGuide: 1,
         guide: "",
         language: "",
@@ -73,17 +94,24 @@ type Vehicle = {
 
 const handleChange = (index: number, field: string, value: any) => {
   const updated = [...driverRows];
+
   updated[index][field] = value;
 
-  // ✅ AUTO SET SUPPLIER
   if (field === "vehicle") {
-    const selectedVehicle = vehicles.find((v: any) => v.id == value);
-    if (selectedVehicle) {
-      updated[index].supplier = selectedVehicle.supplier_id;
-    }
+    const selectedVehicle = vehicles.find(
+      (v) => String(v.id) === String(value)
+    );
+
+    updated[index].supplier = selectedVehicle?.supplier_id || "";
   }
 
   setDriverRows(updated);
+};
+
+const handleGuideChange = (index: number, field: string, value: any) => {
+  const updated = [...guideRows];
+  updated[index][field] = value;
+  setGuideRows(updated);
 };
 
 
@@ -134,7 +162,15 @@ const sortedJobs = [...jobs].sort(
 
 
 const handleSave = async () => {
+  const validRows = driverRows
+  .filter(r => r.driver && r.vehicle)
+  .map(r => ({
+    ...r,
+    vehicle: Number(r.vehicle),
+    supplier: Number(r.supplier),
+  }));
   try {
+    
     // ✅ allow even partial rows
 const validRows = driverRows.filter(
   (r) => r.driver && r.vehicle
@@ -154,14 +190,19 @@ const validRows = driverRows.filter(
     const data = await res.json();
 
     if (data.success) {
-      alert("Saved Successfully ✅");
+        toast.success("Driver Saved Successfully ✅");
       setIsDriverModalOpen(false);
+
+            fetch(`/api/duties?fileNo=${bookingId}`)
+        .then(res => res.json())
+        .then(setJobs);
+
     } else {
-      alert("Save Failed ❌");
+      toast.error("Save Failed ❌");
     }
   } catch (err) {
     console.error(err);
-    alert("Error saving data");
+    toast.error("Error saving guide data");
   }
 };
 
@@ -169,9 +210,10 @@ const handleSaveGuide = async () => {
   try {
 
     // ✅ only save valid rows
-    const validRows = guideRows.filter(
-      (r) => r.noOfGuide > 0 && r.guide && r.language
-    );
+const validRows = guideRows.filter(
+  (r) => r.noOfGuide > 0 && r.guide && r.language && r.supplier
+);
+console.log("🚀 Sending rows:", validRows);
 
     const res = await fetch("/api/duties/guide-allocation/save", {
       method: "POST",
@@ -185,8 +227,8 @@ const handleSaveGuide = async () => {
     });
 
     const data = await res.json();
-
-if (data.success) {
+console.log("✅ API response:", data);
+ if (data.success) {
   toast.success("Guide Saved Successfully ✅");
   setIsGuideModalOpen(false);
 
@@ -222,14 +264,22 @@ if (data.success) {
       // fetch("/api/duties/vehicles")
       //   .then(res => res.json())
       //   .then(setVehicles);
-  fetch("/api/duties/vehicles")
+fetch("/api/duties/vehicles")
   .then(res => {
     if (!res.ok) throw new Error("Vehicle API failed");
     return res.json();
   })
-  .then(setVehicles)
+  .then(data => {
+    console.log("🔥 VEHICLES API RESPONSE:", data);
+
+    // ✅ FIX HERE (handle both cases)
+    const vehiclesArray = Array.isArray(data) ? data : data.data;
+
+    setVehicles(vehiclesArray || []);
+  })
   .catch(err => console.error(err));
 
+  
       // fetch("/api/duties/suppliers")
       //   .then(res => res.json())
       //   .then(setSuppliers);
@@ -260,177 +310,237 @@ fetch("/api/duties/languages")
   }, [bookingId]);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* HEADER */}
- 
+ <div className="p-6 min-h-screen bg-gray-50 dark:bg-black">
+      
+      {/* HEADER BUTTONS */}
+      <div className="flex items-center gap-2 my-5">
+        <Link href="/Reports/duty-chart">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ClipboardList size={16} />
+            Operation
+          </Button>
+        </Link>
 
         <Link href="/dashboard">
-          <Button variant="outline" className="flex items-center gap-2 my-5">
+          <Button variant="outline" className="flex items-center gap-2">
             <LayoutDashboard size={16} />
             Dashboard
           </Button>
         </Link>
-      {/* Header */}
+      </div>
+
+      {/* PAGE HEADER */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
           Allocate / Modify
         </h1>
-        <p className="text-gray-500">
+        <p className="text-gray-500 dark:text-gray-400">
           Booking No: {bookingId}
         </p>
       </div>
 
-    {/* Two Boxes Side by Side */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mr-200">
-
-      {/* Driver Box */}
-      <div className="bg-white shadow-md rounded-xl p-5 border-l-4 border-blue-500">
-        <h2 className="text-lg font-semibold text-blue-600">
-          👨‍✈️ Driver Allotment
-        </h2>
-      </div>
-
-      {/* Guide Box */}
-      <div className="bg-white shadow-md rounded-xl p-5 border-l-4 border-green-500">
-        <h2 className="text-lg font-semibold text-green-600">
-          🧑‍🏫 Guide Allotment
-        </h2>
-      </div>
-
-    </div>
-
-      {/* Table Card */}
-      <div className="bg-white shadow-lg rounded-xl overflow-x-auto">
+      {/* TWO CARDS */}
+      <div className="grid grid-cols-1 mr-200 md:grid-cols-2 gap-6 mb-6">
         
-        <table className="w-full text-sm text-left">
-          
-          <thead className="bg-gray-100 text-gray-600  ">
-            <tr>
-              <th className="text-center p-3">Sr</th>
-              <th className="text-center">Date</th>
-              <th className="text-center">Time</th>
-              <th className="text-center">From Location</th>
-              <th className="text-center">To Location</th>
-              {/* <th className="text-center">Vehicle Name</th> */}
-              <th className="text-center">Vehicle Type</th>
-              <th className="text-center">No. Vehicles</th>
-                            <th className="text-center">Service Type</th>
-              <th className="text-center">No Of Pax</th>
-              <th className="text-center">No Of Guide</th>
-              <th className="text-center">Guide Language</th>
-              <th className="text-center">Vehicle Price</th>
-              <th className="text-center">Guide Price</th>
-              <th className="text-center"></th>
-              <th className="text-center"></th>
-              <th className="text-center"></th>
-              <th className="text-center"></th>
-            </tr>
-          </thead>
+        {/* DRIVER CARD */}
+        <Card className="border-l-4 h-15 border-blue-500 dark:border-blue-400">
+          <CardHeader>
+            <CardTitle className="text-blue-600   dark:text-blue-400">
+              👨‍✈️ Driver Allotment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* content here */}
+          </CardContent>
+        </Card>
 
-          <tbody>
-            {sortedJobs.map((job, index) => (
-              <tr key={job.id} className="border-t hover:bg-gray-50">
+        {/* GUIDE CARD */}
+        <Card className="border-l-4 h-15 border-green-500 dark:border-green-400">
+          <CardHeader>
+            <CardTitle className="text-green-600  dark:text-green-400">
+              🧑‍🏫 Guide Allotment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* content here */}
+          </CardContent>
+        </Card>
 
-                <td className="text-center p-3">{index + 1}</td>
-                <td className="text-center">{job.date}</td>
-                <td className="text-center">{job.pickupTime || "-"}</td>
-                <td className="text-center">{job.pickupLocation || "-"}</td>
-                <td className="text-center">{job.dropLocation || "-"}</td>
-                {/* <td className="text-center">{job.vehicleName || "-"}</td> */}
-                <td className="text-center">{job.vehicleType || "-"}</td>
-                <td className="text-center">{job.noOfVehicle || 1}</td>
-                                <td className="text-center">{job.service_type || "-"}</td>
-                <td className="text-center">{job.pax || 0}</td>
-
-                <td className="text-center">{job.noOfGuide || 0}</td>
-                <td className="text-center">{job.guideLanguage || "-"}</td>
-
-                <td className="text-center">₹ {job.vehiclePrice || 0}</td>
-                <td className="text-center">₹ {job.guidePrice || 0}</td>
-
-                {/* Driver Allocation */}
-                <td className="text-center">
-<button 
-    onClick={() => handleOpenDriverModal(job.id)}
-    className="bg-blue-200 text-white cursor-pointer p-2 rounded-full hover:bg-blue-700 transition">
-    👨‍✈️
-</button>
-                </td>
-
-                {/* Guide Allocation */}
-                <td className="text-center">
-<button 
-    onClick={() => handleOpenGuideModal(job.id)}
-    className="bg-green-200 text-white cursor-pointer p-2 rounded-full hover:bg-green-700 transition">
-    🧑‍🏫
-</button>
-                </td>
-
-                {/* Status */}
-<td className="text-center">
-  <span
-    className={`px-2 py-1 text-xs rounded-full font-medium ${
-      job.driverName
-        ? "text-green-700"
-        : "text-red-600"
-    }`}
-  >
-    {job.driverName ? "Driver Assigned" : "Driver Pending"}
-  </span>
-</td>
-
-<td className="text-center">
-  <span
-    className={`px-2 py-1 text-xs rounded-full font-medium ${
-      job.guideName
-        ? "text-green-700"
-        : "text-red-600"
-    }`}
-  >
-    {job.guideName ? "Guide Assigned" : "Guide Pending"}
-  </span>
-</td>
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
       </div>
+   
+      {/* Table Card */}
+<Card className="overflow-hidden">
+  <CardContent className="p-0">
+
+    <Table>
+      {/* HEADER */}
+      <TableHeader className="bg-gray-100 dark:bg-neutral-900">
+        <TableRow>
+          <TableHead className="text-center">Sr</TableHead>
+          <TableHead className="text-center">Date</TableHead>
+          <TableHead className="text-center">Time</TableHead>
+          <TableHead>From Location</TableHead>
+          <TableHead>To Location</TableHead>
+          <TableHead>Product Name</TableHead>
+          <TableHead>Vehicle Type</TableHead>
+          <TableHead className="text-center">No. Vehicles</TableHead>
+          <TableHead>Service Type</TableHead>
+          <TableHead className="text-center">No Of Pax</TableHead>
+          <TableHead className="text-center">No Of Guide</TableHead>
+          <TableHead>Guide Language</TableHead>
+          <TableHead className="text-center">Vehicle Price</TableHead>
+          <TableHead className="text-center">Guide Price</TableHead>
+          <TableHead className="text-center"></TableHead>
+          <TableHead className="text-center"></TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Status</TableHead>
+        </TableRow>
+      </TableHeader>
+
+      {/* BODY */}
+      <TableBody>
+        {sortedJobs.map((job, index) => (
+          <TableRow key={job.id} className="hover:bg-gray-50 dark:hover:bg-neutral-800">
+
+            <TableCell className="text-center">{index + 1}</TableCell>
+
+            <TableCell className="text-center">
+              {job.date
+                ? new Date(job.date).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "2-digit",
+                  })
+                : "-"}
+            </TableCell>
+
+            <TableCell className="text-center">
+              {job.pickupTime || "-"}
+            </TableCell>
+
+            <TableCell>{job.pickupLocation || "-"}</TableCell>
+            <TableCell>{job.dropLocation || "-"}</TableCell>
+            <TableCell>  {`${job.service_type || "-"} from ${job.pickupLocation || "-"} to ${job.dropLocation || "-"}`}</TableCell>
+            <TableCell>{job.vehicleType || "-"}</TableCell>
+
+            <TableCell className="text-center">
+              {job.noOfVehicle || 1}
+            </TableCell>
+
+            <TableCell>{job.service_type || "-"}</TableCell>
+
+            <TableCell className="text-center">{job.pax || 0}</TableCell>
+            <TableCell className="text-center">{job.noOfGuide || 0}</TableCell>
+
+            <TableCell>{job.guideLanguage || "-"}</TableCell>
+
+            <TableCell className="text-center">
+              ₹ {job.vehiclePrice || 0}
+            </TableCell>
+
+            <TableCell className="text-center">
+              ₹ {job.guidePrice || 0}
+            </TableCell>
+
+            {/* Driver Button */}
+            <TableCell className="text-center">
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => handleOpenDriverModal(job.id)}
+                className="bg-blue-200 dark:bg-blue-200 rounded-full"
+              >
+                👨‍✈️
+              </Button>
+            </TableCell>
+
+            {/* Guide Button */}
+            <TableCell className="text-center">
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => handleOpenGuideModal(job.id)}
+                className="bg-green-200 dark:bg-green-200 rounded-full"
+              >
+                🧑‍🏫
+              </Button>
+            </TableCell>
+
+            {/* Driver Status */}
+            <TableCell>
+              <span
+                className={`text-xs font-medium ${
+                  job.driverName
+                    ? "text-green-600"
+                    : "text-red-500"
+                }`}
+              >
+                {job.driverName ? "Driver Assigned" : "Driver Pending"}
+              </span>
+            </TableCell>
+
+            {/* Guide Status */}
+            <TableCell>
+              <span
+                className={`text-xs font-medium ${
+                  job.guideName
+                    ? "text-green-600"
+                    : "text-red-500"
+                }`}
+              >
+                {job.guideName ? "Guide Assigned" : "Guide Pending"}
+              </span>
+            </TableCell>
+
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+
+  </CardContent>
+</Card>
 
 
 {isDriverModalOpen && (
-  <div className="fixed inset-0 bg-black/50 flex justify-center pt-10 items-center z-50">
-    <div className="bg-white  w-[95vw] max-w-[1200px] h-[90vh]  overflow-y-auto rounded-xl p-6 shadow-2xl">
+  <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+    <div className="bg-white dark:bg-black  w-[95vw] max-w-[1200px] h-[80vh]  overflow-y-auto rounded-xl p-6 shadow-2xl">
 
       {/* HEADER */}
       
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between dark:bg-black items-center mb-4">
          <h2 className="text-lg font-bold text-blue-600">
           Driver Allotment
         </h2>
         
-        <button
-          onClick={() => setIsDriverModalOpen(false)}
-          className="text-red-500 text-xl"
-        >
-          ✖
-        </button>
+<button
+  onClick={() => setIsDriverModalOpen(false)}
+  className="
+    flex items-center justify-center
+    w-9 h-9 rounded-full
+    text-gray-500 dark:text-gray-400
+    hover:bg-gray-100 dark:hover:bg-zinc-800
+    hover:text-black dark:hover:text-white
+    transition
+  "
+>
+  <X className="w-5 h-5" />
+</button>
 
        
       </div>
 
       {/* INFO BOXES */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid  grid-cols-2 gap-4 mb-10">
 
         {/* BOX 1 */}
-        <div className="bg-gray-100 p-4 rounded">
+        <div className="bg-gray-100 p-4  dark:bg-[#0B0B0B] rounded">
           <p>Total vehicle to assign: <b>{jobs.find(j => j.id === selectedJobId)?.noOfVehicle ?? 1}</b></p>
           <p>Vehicle type: <b>{jobs.find(j => j.id === selectedJobId)?.vehicleType || "-"}</b></p>
           <p>Total allotment vehicles: <b>{driverRows.length || "-"}</b></p>
         </div>
 
         {/* BOX 2 */}
-        <div className="bg-gray-100 p-4 rounded">
+        <div className="bg-gray-100  dark:bg-[#0B0B0B] p-4 rounded">
           <p>Total pax: <b>{jobs.find(j => j.id === selectedJobId)?.pax || 0}</b></p>
           <p>Guide details: <b>{jobs.find(j => j.id === selectedJobId)?.guideName || "NA"}</b></p>
         </div>
@@ -439,7 +549,7 @@ fetch("/api/duties/languages")
 
       {/* TABLE */}
       <table className="w-full text-sm border">
-        <thead className="bg-gray-200">
+        <thead className="bg-gray-200  dark:bg-[#0B0B0B]">
           <tr>
             <th>Duty Slip</th>
             <th>Supplier</th>
@@ -448,6 +558,7 @@ fetch("/api/duties/languages")
             <th>Driver</th>
             <th>Manual Cost</th>
             <th>Add</th>
+            <th>Reset</th>
             </tr>
         </thead>
 
@@ -463,99 +574,99 @@ fetch("/api/duties/languages")
               {/* Supplier */}
               <td>
                 <select
-  value={row.supplier || ""}
-  onChange={(e) =>
-    handleChange(index, "supplier", e.target.value)
-  }
-  className="border p-1 rounded w-full"
->
-  <option value="">Select Supplier</option>
-  {suppliers.map((s: any) => (
-    <option key={s.id} value={s.id}>
-      {s.name}
-    </option>
-  ))}
-</select>
+                  value={row.supplier ?? ""}
+                  onChange={(e) =>
+                    handleChange(index, "supplier", e.target.value)
+                  }
+                  className="border p-1 dark:bg-black rounded w-full"
+                >
+                  <option value="">Select Supplier</option>
+                  {suppliers.map((s: any) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
               </td>
 
               {/* No Vehicles */}
               <td>
                 <input
-  type="number"
-  min="1"
-  step="1"
-  className="border p-1 w-full"
-  value={row.noOfVehicles ?? "1"}
-  onChange={(e) => {
-    const value = e.target.value;
+                  type="number"
+                  min="1"
+                  step="1"
+                  className="border dark:bg-black p-1 w-full"
+                  value={row.noOfVehicles ?? "1"}
+                  onChange={(e) => {
+                    const value = e.target.value;
 
-    // ✅ Allow empty (user can clear)
-    if (value === "") {
-      const updated = [...driverRows];
-      updated[index].noOfVehicles = "";
-      setDriverRows(updated);
-      return;
-    }
+                    // ✅ Allow empty (user can clear)
+                    if (value === "") {
+                      const updated = [...driverRows];
+                      updated[index].noOfVehicles = "";
+                      setDriverRows(updated);
+                      return;
+                    }
 
-    const num = Number(value);
+                    const num = Number(value);
 
-    // ❌ Invalid (0 or negative)
-    if (num < 1) {
-      toast.error("Minimum 1 vehicle required", { duration: 1500 });
-      return;
-    }
+                    // ❌ Invalid (0 or negative)
+                    if (num < 1) {
+                      toast.error("Minimum 1 vehicle required", { duration: 1500 });
+                      return;
+                    }
 
-    // ✅ Valid
-    const updated = [...driverRows];
-    updated[index].noOfVehicles = num;
-    setDriverRows(updated);
-  }}
+                    // ✅ Valid
+                    const updated = [...driverRows];
+                    updated[index].noOfVehicles = num;
+                    setDriverRows(updated);
+                  }}
 
-  // 🔥 If user leaves empty → set 1
-  onBlur={() => {
-    if (!row.noOfVehicles || row.noOfVehicles < 1) {
-      const updated = [...driverRows];
-      updated[index].noOfVehicles = 1;
-      setDriverRows(updated);
-    }
-  }}
-/>
+                  // 🔥 If user leaves empty → set 1
+                  onBlur={() => {
+                    if (!row.noOfVehicles || row.noOfVehicles < 1) {
+                      const updated = [...driverRows];
+                      updated[index].noOfVehicles = 1;
+                      setDriverRows(updated);
+                    }
+                  }}
+                />
               </td>
 
               {/* Vehicle */}
               <td>
-<select
-  value={row.vehicle}
-  onChange={(e) =>
-    handleChange(index, "vehicle", e.target.value)
-  }
-  className="border p-1 rounded w-full"
->
-  <option value="">Select Vehicle</option>
-  {vehicles.map((v: any) => (
-    <option key={v.id} value={v.id}>
-      {v.name}
-    </option>
-  ))}
-</select>
+                <select
+                  value={row.vehicle ? String(row.vehicle) : ""}
+                  onChange={(e) =>
+                    handleChange(index, "vehicle", e.target.value)
+                  }
+                  className="border dark:bg-black p-1 rounded w-full"
+                >
+                  <option value="">Select Vehicle</option>
+                  {vehicles.map((v: any) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
               </td>
 
               {/* Driver */}
               <td>
-<select
-  value={row.driver}
-  onChange={(e) =>
-    handleChange(index, "driver", e.target.value)
-  }
-  className="border p-1 rounded w-full"
->
-  <option value="">Select Driver</option>
-  {drivers.map((d: any) => (
-    <option key={d.id} value={d.id}>
-      {d.name}
-    </option>
-  ))}
-</select>
+                <select
+                  value={row.driver}
+                  onChange={(e) =>
+                    handleChange(index, "driver", e.target.value)
+                  }
+                  className="border dark:bg-black p-1 rounded w-full"
+                >
+                  <option value="">Select Driver</option>
+                  {drivers.map((d: any) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
               </td>
 
               {/* Manual Cost */}
@@ -584,7 +695,8 @@ fetch("/api/duties/languages")
                         noOfVehicles: 1,
                         vehicle: "",
                         driver: "",
-                        manualCost: ""
+                        manualCost: "",
+                        remark:""
                       }
                     ]);
                   }}
@@ -593,39 +705,113 @@ fetch("/api/duties/languages")
                   Add
                 </button>
               </td>
-              
 
+              <td className="text-center">
+  <button
+    onClick={() => {
+      const updated = [...driverRows];
+
+      updated[index] = {
+                        dutySlipNo: "",
+                        supplier: "",
+                        noOfVehicles: 1,
+                        vehicle: "",
+                        driver: "",
+                        manualCost: "",
+                        remark:""
+      };
+
+      setDriverRows(updated);
+    }}
+    className="bg-red-500 text-white px-2 py-1 rounded"
+  >
+    Reset
+  </button>
+</td>
+              
+               
+               
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* FOOTER */}
-      <div className="flex justify-end gap-3 mt-6">
-        <button
-          onClick={handleSave} 
-          className="bg-blue-600 text-white px-4 py-2 rounded">
-          Save
-        </button>
-        <button
-          onClick={() => setIsDriverModalOpen(false)}
-          className="bg-gray-400 text-white px-4 py-2 rounded"
-        >
-          Close
-        </button>
 
-      </div>
+ <div className="mt-8 border-t pt-4">
+
+            {driverRows.map((row, index) => (
+        <div key={index} className=" w-150 p-3 mt-3 rounded">
+          
+          <div className="font-semibold mb-2">
+            Notes 
+          </div>
+
+          <textarea
+            className="border p-2 w-150  dark:bg-black rounded"
+            value={row.remark ?? ""}
+            onChange={(e) => {
+              const updated = [...driverRows];
+              updated[index].remark = e.target.value;
+              setDriverRows(updated);
+            }}
+            placeholder="Enter notes..."
+          />
+        </div>
+      ))}
+
+  <div className="grid grid-cols-1 ml-280  md:grid-cols-3 gap-4 items-end">
+
+    {/* Buttons */}
+    <div className="flex gap-3 justify-end">
+      <button
+        onClick={handleSave}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Save
+      </button>
+
+      <button
+        onClick={() => setIsDriverModalOpen(false)}
+        className="bg-gray-400 text-white px-4 py-2 rounded"
+      >
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>
+
 
     </div>
   </div>
 )}
 
 {isGuideModalOpen && (
-  <div className="fixed inset-0 bg-black/50 flex justify-center pt-10 items-center z-50">
-    <div className="bg-white w-[95vw] max-w-[1000px] h-[85vh] overflow-y-auto rounded-xl p-6 shadow-2xl">
+  <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+    <div className="bg-white dark:bg-black w-[95vw] max-w-[1000px] h-[65vh] overflow-y-auto rounded-xl p-6 shadow-2xl">
 
       {/* HEADER */}
-      <div className="bg-gray-100 p-4 rounded mb-6">
+
+      <div className="flex justify-between dark:bg-black items-center mb-4">
+        <h2 className="text-lg font-bold text-green-600">
+          Guide Allotment
+        </h2>
+<button
+  onClick={() => setIsGuideModalOpen(false)}
+  className="
+    flex items-center justify-center
+    w-9 h-9 rounded-full
+    text-gray-500 dark:text-gray-400
+    hover:bg-gray-100 dark:hover:bg-zinc-800
+    hover:text-black dark:hover:text-white
+    transition
+  "
+>
+  <X className="w-5 h-5" />
+</button>
+ 
+      </div>
+            <div className="bg-gray-100 dark:bg-[#0B0B0B] p-4 rounded mb-6">
   <p>
     Total Guide Required :{" "}
     <b>
@@ -647,29 +833,19 @@ fetch("/api/duties/languages")
     </b>
   </p>
 </div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold text-green-600">
-          Guide Allotment
-        </h2>
-
-        <button
-          onClick={() => setIsGuideModalOpen(false)}
-          className="text-red-500 text-xl"
-        >
-          ✖
-        </button>
-      </div>
 
       {/* BODY WILL COME NEXT STEP */}
-      <table className="w-full text-sm border">
-  <thead className="bg-gray-200">
+      <table className="w-full dark:bg-[#0B0B0B] text-sm border">
+  <thead className="dark:bg-[#0B0B0B] bg-gray-200">
     <tr>
       <th>Duty Slip</th>
+      <th>Supplier</th>
       <th>No. of Guide</th>
       <th>Guide</th>
       <th>Guide Language</th>
       <th>Extra Charge</th>
       <th>Add</th>
+      <th>Reset</th>
     </tr>
   </thead>
 
@@ -681,11 +857,29 @@ fetch("/api/duties/languages")
           {row.dutySlipNo || "-"}
         </td>
 
+                      {/* Supplier */}
+              <td>
+                <select
+                  value={row.supplier ?? ""}
+                  onChange={(e) =>
+  handleGuideChange(index, "supplier", Number(e.target.value))
+}
+                  className="border p-1 dark:bg-black rounded w-full"
+                >
+                  <option value="">Select Supplier</option>
+                  {suppliers.map((s: any) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </td>
+
 <td>
   <input
     type="number"
     min="0"
-    className="border p-1 w-full"
+    className="border dark:bg-black p-1 w-full"
     value={row.noOfGuide}
     onChange={(e) => {
       const updated = [...guideRows];
@@ -698,7 +892,7 @@ fetch("/api/duties/languages")
         <td>
 <select
   disabled={row.noOfGuide === 0}
-  className="border p-1 w-full"
+  className="border dark:bg-black p-1 w-full"
 value={row.guide ?? ""}
   onChange={(e) => {
     const updated = [...guideRows];
@@ -719,7 +913,7 @@ value={row.guide ?? ""}
         <td>
 <select
   disabled={row.noOfGuide === 0}
-  className="border p-1 w-full"
+  className="border dark:bg-black p-1 w-full"
 value={row.language ?? ""}
   onChange={(e) => {
     const updated = [...guideRows];
@@ -740,7 +934,7 @@ value={row.language ?? ""}
         <td>
           <input
             type="number"
-            className="border p-1 w-full"
+            className="border dark:bg-black p-1 w-full"
             value={row.extraCharge}
             onChange={(e) => {
               const updated = [...guideRows];
@@ -757,6 +951,7 @@ value={row.language ?? ""}
                 ...guideRows,
                 {
                   dutySlipNo: "",
+                   supplier: "",
                   guide: "",
                     noOfGuide: 1,
                   language: "",
@@ -770,11 +965,40 @@ value={row.language ?? ""}
           </button>
         </td>
 
+        <td className="text-center">
+  <button
+    onClick={() => {
+      const updated = [...guideRows];
+
+      updated[index] = {
+        dutySlipNo: "",
+        supplier: "",
+        guide: "",
+        noOfGuide: 0,
+        language: "",
+        extraCharge: ""
+      };
+
+      setGuideRows(updated);
+    }}
+    className="bg-red-500 text-white px-2 py-1 rounded"
+  >
+    Reset
+  </button>
+</td>
+
       </tr>
     ))}
   </tbody>
 </table>
 <div className="flex justify-end gap-3 mt-6">
+
+  <button
+  onClick={handleSaveGuide}
+  className="bg-green-600 text-white px-4 py-2 rounded"
+>
+  Save
+</button>
   <button
     onClick={() => setIsGuideModalOpen(false)}
     className="bg-gray-400 text-white px-4 py-2 rounded"
@@ -782,12 +1006,7 @@ value={row.language ?? ""}
     Close
   </button>
 
-<button
-  onClick={handleSaveGuide}
-  className="bg-green-600 text-white px-4 py-2 rounded"
->
-  Save
-</button>
+
 </div>
 
     </div>

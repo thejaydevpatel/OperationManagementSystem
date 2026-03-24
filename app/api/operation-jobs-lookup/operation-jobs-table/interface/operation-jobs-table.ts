@@ -24,4 +24,8 @@ export interface OperationJobsTableEntity {
   job_status_id: number;
   priority: number;
   notes?: string;
+  client: string;
+  agent: string;
+  address: string;
+  guide_language_required?: number;
 }

@@ -12,10 +12,11 @@ export interface VehiclesTableEntity {
   deleted_by?: string;
   tenant_id?: string;
   id: number;
+  name: string;
   vehicle_type_id: number;
   registration_number: string;
   owner_type: string;
-  supplier_id?: number;
+  supplier_id: number;
   vehicle_status_id: number;
-  additional_notes?: string;
+  additional_notes: string;
 }

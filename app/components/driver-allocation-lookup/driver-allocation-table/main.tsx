@@ -35,7 +35,8 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
       setDropDownloading, job_id,
  driver_id,
  vehicle_id,
- allocation_status_id,},
+ allocation_status_id,
+ supplier_id,},
     form: { handleSubmit, errors, onSubmit, control, setValue },
     actions: {
       handleDelete,
@@ -167,7 +168,7 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
             options={vehicle_id.map((op) => {
               return {
                 value: Number(op.id),
-                label: op.vehicle_type_id ,
+                label: op.vehicle_type_id,
               };
             })}
           />
@@ -217,6 +218,36 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
     </div>
 
     <div className="col-span-1">
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <RHFSelect
+            name="supplier_id"
+            label="Supplier Id"
+            control={control}
+            errors={errors}
+            options={supplier_id.map((op) => {
+              return {
+                value: Number(op.id),
+                label: op.name,
+              };
+            })}
+          />
+        </div>
+        {/*<SpinningRefreshIcon
+          spinning={dropDownloading["supplier_id"]}
+          onClick={() =>
+            handleRefresh("supplier_id", handleDropDown)
+          }
+        />*/}
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
       <div className="flex items-center">
         <div className="flex-1">
           <RHFTimePicker
@@ -240,6 +271,24 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
             control={control}
             name="end_time"
             label="End Time"
+          />
+        </div>
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
+      <div className="flex items-center">
+        <div className="flex-1">
+          <RHFTextField
+            name="manual_cost"
+            label="Manual Cost"
+            control={control}
+            errors={errors}
           />
         </div>
         {/*<LabelWithTooltip

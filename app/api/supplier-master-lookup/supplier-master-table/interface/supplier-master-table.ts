@@ -12,8 +12,9 @@ export interface SupplierMasterTableEntity {
   deleted_by?: string;
   tenant_id?: string;
   id: number;
+  supplier_type: number;
   name: string;
-  supplier_type: string;
+  service_type: string;
   contact_person?: string;
   phone?: string;
   email?: string;

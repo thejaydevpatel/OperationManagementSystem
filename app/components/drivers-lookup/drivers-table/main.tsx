@@ -32,7 +32,8 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
 
   const {
     state: { register, list, editId, modal, setList, btnLoading, pageLoading, page, rowsPerPage, setPage, setRowsPerPage, totalRecordObj, sortBy, setSortBy, order, setOrder, dropDownloading,
-      setDropDownloading, supplier_id,
+      setDropDownloading, supplier_type,
+ supplier_id,
  driver_status_id,
  last_known_location_id,},
     form: { handleSubmit, errors, onSubmit, control, setValue },
@@ -96,6 +97,66 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
                       <div className="grid grid-cols-1 gap-4">
                         
     <div className="col-span-1">
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <RHFSelect
+            name="supplier_type"
+            label="Supplier Type"
+            control={control}
+            errors={errors}
+            options={supplier_type.map((op) => {
+              return {
+                value: Number(op.id),
+                label: op.name,
+              };
+            })}
+          />
+        </div>
+        {/*<SpinningRefreshIcon
+          spinning={dropDownloading["supplier_type"]}
+          onClick={() =>
+            handleRefresh("supplier_type", handleDropDown)
+          }
+        />*/}
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <RHFSelect
+            name="supplier_id"
+            label="Supplier Id"
+            control={control}
+            errors={errors}
+            options={supplier_id.map((op) => {
+              return {
+                value: Number(op.id),
+                label: op.name,
+              };
+            })}
+          />
+        </div>
+        {/*<SpinningRefreshIcon
+          spinning={dropDownloading["supplier_id"]}
+          onClick={() =>
+            handleRefresh("supplier_id", handleDropDown)
+          }
+        />*/}
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
       <div className="flex items-center">
         <div className="flex-1">
           <RHFTextField
@@ -141,36 +202,6 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
             errors={errors}
           />
         </div>
-        {/*<LabelWithTooltip
-          text=""
-          tooltip="Set display order (lower numbers appear first)"
-          href="/admin/docs/order-rules"
-        />*/}
-      </div>
-    </div>
-
-    <div className="col-span-1">
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <RHFSelect
-            name="supplier_id"
-            label="Supplier Id"
-            control={control}
-            errors={errors}
-            options={supplier_id.map((op) => {
-              return {
-                value: Number(op.id),
-                label: op.name,
-              };
-            })}
-          />
-        </div>
-        {/*<SpinningRefreshIcon
-          spinning={dropDownloading["supplier_id"]}
-          onClick={() =>
-            handleRefresh("supplier_id", handleDropDown)
-          }
-        />*/}
         {/*<LabelWithTooltip
           text=""
           tooltip="Set display order (lower numbers appear first)"
@@ -278,8 +309,8 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
       <div className="flex items-center">
         <div className="flex-1">
           <RHFTextField
-            name="note"
-            label="Note"
+            name="notes"
+            label="Notes"
             control={control}
             errors={errors}
           />

@@ -306,7 +306,7 @@ const filteredRows = rows.filter((row) => {
                 >
                   <Button className="min-w-[150px]">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add New Vehicle
+                    Add New One Table
                   </Button>
                 </Link>
 
@@ -353,7 +353,8 @@ const filteredRows = rows.filter((row) => {
           <TableHeader>
             <TableRow>
               <TableHead>Sr No.</TableHead>
-              <TableHead>Vehicle Type Id</TableHead>
+              <TableHead>Name</TableHead>
+<TableHead>Vehicle Type Id</TableHead>
 <TableHead>Registration Number</TableHead>
 <TableHead>Owner Type</TableHead>
 <TableHead>Supplier Id</TableHead>
@@ -394,6 +395,13 @@ const filteredRows = rows.filter((row) => {
                             <TableCell>{index + 1}</TableCell>
 
                             
+  <TableCell>
+    <p className="text-muted-foreground text-sm font-normal">
+      {row.name || "-"}
+    </p>
+  </TableCell>
+
+
     <TableCell>
       <p className="text-muted-foreground text-sm font-normal">
     {vehicle_type_id.find(o => Number(o.id) === Number(row.vehicle_type_id))?.name || "-"}
@@ -403,14 +411,14 @@ const filteredRows = rows.filter((row) => {
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.registration_number}
+      {row.registration_number || "-"}
     </p>
   </TableCell>
 
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.owner_type}
+      {row.owner_type || "-"}
     </p>
   </TableCell>
 
@@ -431,7 +439,7 @@ const filteredRows = rows.filter((row) => {
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.additional_notes}
+      {row.additional_notes || "-"}
     </p>
   </TableCell>
 

@@ -33,6 +33,7 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
   const {
     state: { register, list, editId, modal, setList, btnLoading, pageLoading, page, rowsPerPage, setPage, setRowsPerPage, totalRecordObj, sortBy, setSortBy, order, setOrder, dropDownloading,
       setDropDownloading, job_id,
+ supplier_id,
  guide_id,
  allocation_status_id,},
     form: { handleSubmit, errors, onSubmit, control, setValue },
@@ -115,6 +116,36 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
           spinning={dropDownloading["job_id"]}
           onClick={() =>
             handleRefresh("job_id", handleDropDown)
+          }
+        />*/}
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <RHFSelect
+            name="supplier_id"
+            label="Supplier Id"
+            control={control}
+            errors={errors}
+            options={supplier_id.map((op) => {
+              return {
+                value: Number(op.id),
+                label: op.name,
+              };
+            })}
+          />
+        </div>
+        {/*<SpinningRefreshIcon
+          spinning={dropDownloading["supplier_id"]}
+          onClick={() =>
+            handleRefresh("supplier_id", handleDropDown)
           }
         />*/}
         {/*<LabelWithTooltip
@@ -226,6 +257,24 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
             control={control}
             name="actual_end_time"
             label="Actual End Time"
+          />
+        </div>
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
+      <div className="flex items-center">
+        <div className="flex-1">
+          <RHFTextField
+            name="extra_charge"
+            label="Extra Charge"
+            control={control}
+            errors={errors}
           />
         </div>
         {/*<LabelWithTooltip

@@ -30,8 +30,10 @@ const getSchema = (isEdit: boolean) =>
   driver_id: z.number().int(),
   vehicle_id: z.number().int(),
   allocation_status_id: z.number().int(),
+  supplier_id: z.number().int().optional(),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
+  manual_cost: z.string().optional(),
   notes: z.string().optional(),
   });
 
@@ -72,6 +74,7 @@ const router = useRouter();
  const [driver_id, setDriver_id] = useState<any[]>([]);
  const [vehicle_id, setVehicle_id] = useState<any[]>([]);
  const [allocation_status_id, setAllocation_status_id] = useState<any[]>([]);
+ const [supplier_id, setSupplier_id] = useState<any[]>([]);
 
 
 const dropdownEndpoints: Record<string, string | null> = {
@@ -79,6 +82,7 @@ const dropdownEndpoints: Record<string, string | null> = {
   driver_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/drivers-lookup/drivers-table?pageSize=9999`,
   vehicle_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/vehicles-lookup/vehicles-table?pageSize=9999`,
   allocation_status_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/status-master-lookup/status-master-table?pageSize=9999`,
+  supplier_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/supplier-master-lookup/supplier-master-table?pageSize=9999`,
 };
 
   const api = getDriverAllocationTableEntityApi(module);
@@ -106,10 +110,11 @@ const dropdownEndpoints: Record<string, string | null> = {
  defaultValues: {
   start_time: "",
   end_time: "",
+  manual_cost: 0,
   notes: "",
 },  
     // resolver: zodResolver(getSchema(false)),
-      // defaultValues:{}
+      // defaultValues:{"manual_cost":0}
   });
 
   //  useUnsavedChangesWarning(isDirty);
@@ -433,6 +438,14 @@ if (key === "allocation_status_id") {
       setAllocation_status_id(result.data);
     }
     }
+
+if (key === "supplier_id") {
+      const endPoint =dropdownEndpoints[key]; 
+      if (endPoint) {
+      const result = await handleRefreshAPIs(endPoint);
+      setSupplier_id(result.data);
+    }
+    }
   };
 
   return {
@@ -448,7 +461,8 @@ if (key === "allocation_status_id") {
       setDropDownloading,job_id,
  driver_id,
  vehicle_id,
- allocation_status_id, },
+ allocation_status_id,
+ supplier_id, },
     form: { handleSubmit, errors, onSubmit, control,setValue },
     actions: { handleStatusChange, handleDelete, handleClear, handleEdit, closeModal, openModal,  handleView, handleOnListToggle,  handleRefresh,
       handleDropDown,  },

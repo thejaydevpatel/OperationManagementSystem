@@ -15,20 +15,31 @@ import {
 } from "@/components/ui/sidebar"
 import { ThemeToggle } from "./theme-toggle"
 import DirectionToggle from "@/components/direction-toggle";
+import Image from "next/image";
 
 export default function Header() {
   return (
         <header className="fixed top-0 left-0 right-0 h-14 border-b bg-background flex items-center justify-between px-4 z-50">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold">My Application</h1>
+            {/* <h1 className="text-lg font-semibold">My Application</h1> */}
+<Image
+  src="/techno-logo-main.png"
+  alt="Logo"
+  width={120}
+  height={40}
+  className="h-8 w-auto"
+/>
             <SidebarTrigger />
           </div>
           <div className="flex items-center gap-4">
-            <Bell className="h-5 w-5 cursor-pointer" />
+            
             {/* <User className="h-5 w-5 cursor-pointer" /> */}
             <Dialog>
               <DialogTrigger asChild>
-                <User className="h-5 w-5 cursor-pointer" />
+                    <div className="flex items-center gap-2 cursor-pointer">
+                      <span className="text-sm font-medium">JAYD001</span> {/* 👈 static code */}
+                      <User className="h-5 w-5" />
+                    </div>
               </DialogTrigger>
 
               <DialogContent>
@@ -51,6 +62,8 @@ export default function Header() {
                   </div>
               </DialogContent>
             </Dialog>
+            
+                <Bell className="ml-2 mr-2 h-5 w-5 cursor-pointer" />
                 <DirectionToggle/>
                 <ThemeToggle/>
           </div>

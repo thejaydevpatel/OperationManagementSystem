@@ -165,6 +165,9 @@ const List: React.FC<guide_allocation_tablePaginationTableProps> = ({
 const [job_id, setJob_id] = React.useState<any[]>([]);
 
 
+const [supplier_id, setSupplier_id] = React.useState<any[]>([]);
+
+
 const [guide_id, setGuide_id] = React.useState<any[]>([]);
 
 
@@ -188,6 +191,17 @@ React.useEffect(() => {
   };
 
   fetchJob_id();
+}, []);
+
+
+React.useEffect(() => {
+  const fetchSupplier_id = async () => {
+    const res = await fetch("/api/supplier-master-lookup/supplier-master-table?pageSize=9999");
+    const data = await res.json();
+    setSupplier_id(data.data || []);
+  };
+
+  fetchSupplier_id();
 }, []);
 
 
@@ -306,7 +320,7 @@ const filteredRows = rows.filter((row) => {
                 >
                   <Button className="min-w-[150px]">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add New Guide Allocation
+                    Add New One Table
                   </Button>
                 </Link>
 
@@ -354,11 +368,13 @@ const filteredRows = rows.filter((row) => {
             <TableRow>
               <TableHead>Sr No.</TableHead>
               <TableHead>Job Id</TableHead>
+<TableHead>Supplier Id</TableHead>
 <TableHead>Guide Id</TableHead>
 <TableHead>Allocation Status Id</TableHead>
 <TableHead>Report Time</TableHead>
 <TableHead>Actual Start Time</TableHead>
 <TableHead>Actual End Time</TableHead>
+<TableHead>Extra Charge</TableHead>
               <TableHead>Status</TableHead>
               {/*<TableHead>Used/Unused</TableHead>*/}
               <TableHead>Actions</TableHead>
@@ -397,6 +413,13 @@ const filteredRows = rows.filter((row) => {
     <TableCell>
       <p className="text-muted-foreground text-sm font-normal">
     {job_id.find(o => Number(o.id) === Number(row.job_id))?.external_booking_id || "-"}
+      </p>
+    </TableCell>
+  
+
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
+    {supplier_id.find(o => Number(o.id) === Number(row.supplier_id))?.name || "-"}
       </p>
     </TableCell>
   
@@ -459,6 +482,13 @@ const filteredRows = rows.filter((row) => {
       </p>
     </TableCell>
   
+
+  <TableCell>
+    <p className="text-muted-foreground text-sm font-normal">
+      {row.extra_charge || "-"}
+    </p>
+  </TableCell>
+
 
                       
                             <TableCell>

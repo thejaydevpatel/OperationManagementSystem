@@ -2,7 +2,41 @@
 import { useState, useEffect } from "react";
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard } from "lucide-react"
+import { LayoutDashboard,ClipboardList } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandItem, CommandList, CommandEmpty } from "@/components/ui/command";
+import Combobox from "@/components/ui/combobox";
+import { useRef } from "react";
+
+import { ChevronsUpDown, Check } from "lucide-react";
+  
+import {
+  FileDown,
+  FileSpreadsheet,
+  Mail,
+  Printer,
+} from "lucide-react";
+
+// ShadCN Components
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+ 
+// ShadCN Select (Radix)
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Duty = {
   srNo?: number;
@@ -11,17 +45,18 @@ type Duty = {
   date: string;
 
   pax?: string;
-  clientName?: string;
-  agentName?: string;
+  client?: string;
+  agent?: string;
   remark?: string;
   address?: string;
   guideName?: string;
   noOfGuide?: number;
 
   activity?: string;
+  service_type?: string;
   vehicleType?: string;
   noOfVehicle?: number;
-
+ 
   dutySlipNo?: string;
   driverName: string | null;
   vehicle: string | null;
@@ -37,11 +72,15 @@ type Duty = {
 export default function DutyChart() {
   const [data, setData] = useState<Duty[]>([]);
   const [loading, setLoading] = useState(true);
-
+const [open, setOpen] = useState(false);
+const [value, setValue] = useState("");
+const [openDriver, setOpenDriver] = useState(false);
+const [driverValue, setDriverValue] = useState("");
 
 const [drivers, setDrivers] = useState<any[]>([]);
 const [locations, setLocations] = useState<any[]>([]);
 const [suppliers, setSuppliers] = useState<any[]>([]);
+const printRef = useRef(null);
 
 const [filters, setFilters] = useState({
   fileNo: "",
@@ -51,6 +90,8 @@ const [filters, setFilters] = useState({
   location: "",
   supplier: "",
     locationType: "",
+    allocationType: "",
+    driverType: "",
 });
 
 useEffect(() => {
@@ -96,372 +137,375 @@ const query = new URLSearchParams(cleanedFilters).toString();
   setLoading(false);
 };
 
+const handleRefresh = async () => {
+  setLoading(true);
+
+  // 1. Reset all filters
+  const defaultFilters = {
+    fileNo: "",
+    from: "",
+    to: "",
+    driver: "",
+    location: "",
+    supplier: "",
+    locationType: "",
+    allocationType: "",
+    driverType: "",
+  };
+
+  setFilters(defaultFilters);
+
+  // 2. Reload original data (no filters)
+  const res = await fetch("/api/duties");
+  const result = await res.json();
+
+  setData(result || []);
+  setLoading(false);
+};
+ 
+
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      
+<div className="p-6 min-h-screen bg-background text-foreground">
+
       {/* HEADER */}
         <h1 className="text-2xl font-bold text-blue-700">
           Driver Operation
         </h1>
 
-        <Link href="/dashboard">
-          <Button variant="outline" className="flex items-center gap-2 my-5">
-            <LayoutDashboard size={16} />
-            Dashboard
-          </Button>
-        </Link>
- 
-      {/* FILTER CARD */}
-<div className="bg-white p-4 rounded shadow mb-4">
+<div className="flex items-center gap-3 my-5">
 
-  {/* FILTER ROW */}
-  <div className="flex flex-wrap items-end gap-3">
+  <Link href="/Reports/duty-chart">
+    <Button variant="outline" className="flex items-center gap-2">
+      <ClipboardList size={16} />
+      Operation
+    </Button>
+  </Link>
 
-    {/* File No */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm whitespace-nowrap">File No</label>
-<input
-  type="text"
-  className="border px-2 py-1 rounded text-sm w-36"
-  onChange={(e) =>
-    setFilters({ ...filters, fileNo: e.target.value })
-  }
-/>
-    </div>
-
-    {/* From */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm">From</label>
-<input
-  type="date"
-  className="border px-2 py-1 rounded text-sm w-36"
-  onChange={(e) =>
-    setFilters({ ...filters, from: e.target.value })
-  }
-/>
-    </div>
-
-    {/* To */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm">To</label>
-<input
-  type="date"
-  className="border px-2 py-1 rounded text-sm w-36"
-  onChange={(e) =>
-    setFilters({ ...filters, to: e.target.value })
-  }
-/>    </div>
-
-    {/* Location Type */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm whitespace-nowrap">Select Location Type</label>
-<select
-  className="border px-2 py-1 rounded text-sm w-40"
-  onChange={(e) =>
-    setFilters({ ...filters, locationType: e.target.value })
-  }
->
-  <option value="">All</option>
-  <option value="Pickup">Pickup</option>
-  <option value="DropOff">DropOff</option>
-</select>
-    </div>
-
-    {/* Location */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm">Select Location</label>
-<select
-  onChange={(e) =>
-    setFilters({ ...filters, location: e.target.value })
-  }
-  className="border px-2 py-1 rounded text-sm w-36"
->
-  <option value="">All</option>
-  {locations.map((l) => (
-    <option key={l.id} value={l.id}>
-      {l.name}
-    </option>
-  ))}
-</select>
-    </div>
-
-    {/* Driver Type */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm whitespace-nowrap">Driver Type</label>
-      <select className="border px-2 py-1 rounded text-sm w-36">
-        <option>All</option>
-      </select>
-    </div>
-
-    {/* Driver */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm">Drivers</label>
-      <select
-  onChange={(e) =>
-    setFilters({ ...filters, driver: e.target.value })
-  }
-  className="border px-2 py-1 rounded text-sm w-36"
->
-  <option value="">All</option>
-  {drivers.map((d) => (
-    <option key={d.id} value={d.id}>
-      {d.name}
-    </option>
-  ))}
-</select>
-    </div>
-
-    {/* Supplier */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm">Suppliers </label>
-<select
-  onChange={(e) =>
-    setFilters({ ...filters, supplier: e.target.value })
-  }
-  className="border px-2 py-1 rounded text-sm w-40"
->
-  <option value="">All</option>
-  {suppliers.map((s) => (
-    <option key={s.id} value={s.id}>
-      {s.name}
-    </option>
-  ))}
-</select>
-    </div>
-
-    {/* Allocation */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm">Allocation Type</label>
-      <select className="border px-2 py-1 rounded text-sm w-32">
-        <option>All</option>
-      </select>
-    </div>
-
-  </div>
-
-  {/* BUTTON ROW */}
-  <div className="flex flex-wrap gap-2 mt-3">
-
-    <button
-      onClick={handleSearch}
-      className="bg-gray-600 text-white px-4 py-1.5 text-sm rounded">
-      Search
-    </button>
-
-    <button className="bg-gray-600 text-white px-4 py-1.5 text-sm rounded">
-      Print
-    </button>
-
-    <button className="bg-gray-600 text-white px-4 py-1.5 text-sm rounded">
-      Refresh
-    </button>
-
-    <button className="bg-gray-600 text-white px-4 py-1.5 text-sm rounded">
-      Download PDF
-    </button>
-
-    <button className="bg-gray-600 text-white px-4 py-1.5 text-sm rounded">
-      Export To Excel
-    </button>
-
-    <button className="bg-gray-600 text-white px-4 py-1.5 text-sm rounded">
-      Send Mail
-    </button>
-
-    <button className="bg-gray-600 text-white px-4 py-1.5 text-sm rounded">
-      PrintDutySlipWise
-    </button>
-
-  </div>
+  <Link href="/dashboard">
+    <Button variant="outline" className="flex items-center gap-2">
+      <LayoutDashboard size={16} />
+      Dashboard
+    </Button>
+  </Link>
 
 </div>
+ 
+      {/* FILTER CARD */}
+ {/* FILTER CARD */}
+<Card className="mb-4  print:hidden">
+  <CardHeader>
+    <CardTitle>Filters</CardTitle>
+  </CardHeader>
+
+  <CardContent>
+
+    {/* FILTER ROW */}
+    <div className="flex flex-wrap gap-4 items-end">
+
+      {/* File No */}
+      <div className="flex flex-col gap-1">
+        <label className="text-sm">File No</label>
+        <Input
+          className="w-60"
+          value={filters.fileNo}
+          onChange={(e) =>
+            setFilters({ ...filters, fileNo: e.target.value })
+          }
+        />
+      </div>
+
+      {/* From */}
+      <div className="flex flex-col gap-1">
+        <label className="text-sm">From</label>
+        <Input
+          type="date"
+          className="w-60"
+           value={filters.from}
+          onChange={(e) =>
+            setFilters({ ...filters, from: e.target.value })
+          }
+        />
+      </div>
+
+      {/* To */}
+      <div className="flex flex-col gap-1">
+        <label className="text-sm">To</label>
+        <Input
+          type="date"
+          className="w-60"
+           value={filters.to}
+          onChange={(e) =>
+            setFilters({ ...filters, to: e.target.value })
+          }
+        />
+      </div>
+
+{/* Location Type */}
+<div className="flex flex-col gap-1">
+  <label className="text-sm">Location Type</label>
+  <Select
+    value={filters.locationType}
+    onValueChange={(value) =>
+      setFilters({ ...filters, locationType: value })
+    } 
+  >
+    <SelectTrigger className="w-60">
+      <SelectValue placeholder="All" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="Pickup">Pickup</SelectItem>
+      <SelectItem value="DropOff">DropOff</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+
+{/* Location */}
+<div className="flex flex-col gap-1">
+  <label className="text-sm">Location</label>
+    <Combobox
+      options={locations.map((l) => ({
+        label: l.name,
+        value: String(l.id),
+      }))}
+      value={filters.location}
+      onChange={(val) => setFilters({ ...filters, location: val })}
+      placeholder="All"
+      searchPlaceholder="Search location..."
+    />
+</div>
+
+{/* Driver Type */}
+{/* Driver Type */}
+<div className="flex flex-col gap-1">
+  <label className="text-sm">Driver Type</label>
+
+  <Select
+    onValueChange={(value) =>
+      setFilters({ ...filters, driverType: value })
+    }
+  >
+    <SelectTrigger className="w-60">
+      <SelectValue placeholder="All" />
+    </SelectTrigger>
+
+    <SelectContent>
+      <SelectItem value="all">All</SelectItem>
+      <SelectItem value="inhouse">Inhouse</SelectItem>
+      <SelectItem value="outsource">Outsource</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+
+{/* Driver */}
+<div className="flex flex-col gap-1">
+  <label className="text-sm">Drivers</label>
+
+  <Combobox
+    options={drivers.map((d) => ({
+      label: d.name,
+      value: String(d.id),
+    }))}
+    value={filters.driver}
+    onChange={(val) => setFilters({ ...filters, driver: val })}
+    placeholder="All"
+    searchPlaceholder="Search driver..."
+  />
+</div>
+
+{/* Supplier */}
+<div className="flex flex-col gap-1">
+  <label className="text-sm">Suppliers</label>
+<Combobox
+  options={suppliers.map((s) => ({
+    label: s.name,
+    value: String(s.id),
+  }))}
+  value={filters.supplier}
+  onChange={(val) => setFilters({ ...filters, supplier: val })}
+  placeholder="All"
+  searchPlaceholder="Search Supplier..."
+/>
+</div>
+
+{/* Allocation */}
+<div className="flex flex-col gap-1">
+  <label className="text-sm">Allocation</label>
+  <Select
+    onValueChange={(value) =>
+      setFilters({ ...filters, allocationType: value })
+    }
+  >
+    <SelectTrigger className="w-60">
+      <SelectValue placeholder="All" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="Allocate">Allocate</SelectItem>
+      <SelectItem value="Modify">Modify</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+
+    </div>
+
+    {/* BUTTON ROW */}
+    <div className="flex flex-wrap items-center justify-between gap-2 mt-5 w-full">
+    <div className="flex flex-wrap gap-2 mt-5">
+      <Button onClick={handleSearch}>Search</Button>
+      <Button onClick={handleRefresh} >Refresh</Button>
+      <Button onClick={() => window.print()}>Print</Button>
+    </div>
+<div className="flex flex-wrap gap-2 mt-5 justify-end">
+  <Button variant="ghost" className="p-2">
+    <FileDown className="text-blue-600 size-xl" />
+  </Button>
+
+  <Button variant="ghost" className="p-2">
+    <FileSpreadsheet className="text-green-600 size-xl" />
+  </Button>
+
+  <Button variant="ghost" className="p-2">
+    <Mail className="text-orange-500 size-xl" />
+  </Button>
+
+  <Button variant="ghost" className="p-2">
+    <Printer className="text-purple-600 size-xl" />
+  </Button>
+</div>
+    </div>
+
+
+  </CardContent>
+</Card>
 
       {/* TABLE CARD */}
-      <div className="bg-white rounded shadow p-4">
-        <h2 className="font-semibold mb-3">Duty Chart Details</h2>
+<div  id="print-section">
+<Card>
+  <CardHeader>
+    <CardTitle>Duty Chart Details</CardTitle>
+  </CardHeader>
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <table className="w-full border text-sm">
-            <thead className="bg-blue-700 ">
-              <tr>
-                <th className="p-2">Sr No.</th>
-                <th className="p-2">Date</th>
-                <th className="p-2">File Details</th>
-                <th className="p-2">Service Details</th>
-                <th className="p-2">Vehicle Driver Details</th>
-                <th className="p-2">Pickup point / reporting time </th>
-                <th className="p-2">Drop off place</th>
-                <th className="p-2">print merged duty slip</th>
-               </tr>
-            </thead>
+  <CardContent>
+    {loading ? (
+      <p>Loading...</p>
+    ) : (
+      <Table>
 
-            {/* <tbody>
-              {data.length > 0 ? (
-                data.map((row, i) => (
-                  <tr key={i} className="border text-center hover:bg-gray-100">
-                    <td className="p-2">{row.bookingId || "-"}</td>
-                    <td className="p-2">{row.driver || "Not Assigned"}</td>
-                    <td className="p-2">{row.vehicle || "-"}</td>
-                    <td className="p-2">{row.pickup || "-"}</td>
-                    <td className="p-2">{row.drop || "-"}</td>
-                    <td className="p-2">{row.time || "-"}</td>
+        {/* HEADER */}
+        <TableHeader>
+          <TableRow className=" mt-20 bg-muted border-b border-border">
+            <TableHead>Sr No.</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>File Details</TableHead>
+            <TableHead>Service Details</TableHead>
+            <TableHead>Vehicle Driver Details</TableHead>
+            <TableHead>Pickup / Reporting</TableHead>
+            <TableHead>Drop</TableHead>
+            <TableHead>Print</TableHead>
+          </TableRow>
+        </TableHeader>
 
-                    <td className="p-2">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          row.status === "Completed"
-                            ? "bg-green-600"
-                            : row.status === "Assigned"
-                            ? "bg-blue-500"
-                            : "bg-gray-500"
-                        }`}
-                      >
-                        {row.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="p-4 text-center">
-                    No Data Found
-                  </td>
-                </tr>
-              )}
-            </tbody> */}
-            <tbody>
-  {data.length > 0 ? (
-    data.map((row, i) => (
-      <tr key={i} className="border text-center hover:bg-gray-100">
+        {/* BODY */}
+        <TableBody>
+          {data.length > 0 ? (
+            data.map((row, i) => (
+              <TableRow key={i} className="hover:bg-muted/50">
 
-        {/* 1. Sr No */}
-        <td className="p-2">{i + 1}</td>
+                {/* 1 */}
+                <TableCell>{i + 1}</TableCell>
 
-        {/* 2. Date */}
-        <td className="p-2">
-          {row.date || "-"}
-        </td>
+                {/* 2 */}
+                <TableCell>{row.date || "-"}</TableCell>
 
-        {/* 3. File Details */}
-         <td className="p-2 text-left">
-          <div><b>Booking:</b> {row.bookingId || "-"}</div>
-          <div><b>PAX:</b> {row.pax || "-"}</div>
-          <div><b>Client:</b> {row.clientName || "-"}</div>
-          <div><b>Agent:</b> {row.agentName || "-"}</div>
-          <div><b>Remark:</b> {row.remark || "-"}</div>
-          <div><b>Address:</b> {row.address || "-"}</div>
-          <div><b>Guide:</b> {row.noOfGuide || "-"}</div>
-        </td>
+                {/* 3 */}
+                <TableCell className="text-left">
+                  <div><b>Booking:</b> {row.bookingId || "-"}</div>
+                  <div><b>PAX:</b> {row.pax || "-"}</div>
+                  <div><b>Client Name:</b> {row.client || "-"}</div>
+                  <div><b>Agent Name:</b> {row.agent || "-"}</div>
+                  <div><b>Remark:</b> {row.remark || "-"}</div>
+                  <div><b>Address Details:</b> {row.address || "-"}</div>
+                  <div><b>Guide:</b> {row.noOfGuide || "-"}</div>
+                </TableCell>
 
-        {/* 4. Service Details */}
-        <td className="p-2 text-left">
-          <div><b>Date:</b> {row.date || "-"}</div>
-          <div><b>Activity:</b> {row.activity || "-"}</div>
-          <div><b>Vehicle Type:</b> {row.vehicleType || "-"}</div>
-          <div><b>No. of Vehicle:</b> {row.noOfVehicle || "1"}</div>
-        </td>
+                {/* 4 */}
+                <TableCell className="text-left">
+                  <div><b>Date:</b> {row.date || "-"}</div>
+                  <div><b>Activity:</b> {row.service_type || "-"}</div>
+                  <div><b>VH Type:</b> {row.vehicleType || "-"}</div>
+                  <div><b>No.Of Vehicles:</b> {row.noOfVehicle || "1"}</div>
+                </TableCell>
 
-        {/* 5. Vehicle Driver Details */}
-        <td className="p-2 text-left">
-          <div><b>Duty Slip No:</b> {row.dutySlipNo || "-"}</div>
-          <div><b>Car Reg. No:</b> {row.registrationNumber || "-"}</div>
-          <div><b>Driver:</b> {row.driverName || "Not Assigned"}</div>
-          <div><b>Guide:</b> {row.guideName || "-"}</div>
+                {/* 5 */}
+                <TableCell className="text-left">
+                  <div><b>Duty Slip No.:</b> {row.dutySlipNo || "-"}</div>
+                  <div><b>Registration Number:</b> {row.registrationNumber || "-"}</div>
+                  <div><b>Driver Name:</b> {row.driverName || "Not Assigned"}</div>
+                  <div><b>Guide Name:</b> {row.guideName || "-"}</div>
 
-          <div className="mt-2">
+                  <div className="mt-2">
+                    {!row.driverName && !row.guideName ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-destructive text-sm font-medium">
+                          Not Allocated
+                        </span>
 
-<span>
-  {!row.driverName && !row.guideName ? (
-    <>
-     <span className="text-red-600 font-medium">
-        Not Allocated - 
-      </span>{" "}
-      <Link href={`/Reports/duty-chart/allocate/${row.bookingId}`}>
-        <span className="text-blue-600 cursor-pointer px-3 py-1 rounded-md bg-blue-200 transition">Allocate</span>
-      </Link>
-    </>
-  ) : (
-    <>
-      <span className="text-green-600 font-medium">
-        Allocated - 
-      </span>{" "}
-      <Link href={`/Reports/duty-chart/allocate/${row.bookingId}`}>
-        <span className="text-orange-600 cursor-pointer bg-green-100   px-3 py-1 rounded-md bg-orange-200 transition">Modify</span>
-      </Link>
-    </>
-  )}
-</span>
-{/* <Link href={`/Reports/duty-chart/allocate/${row.bookingId}`}>
-  <button className="text-blue-600 underline">
-    {row.driverName || row.guide ? "Modify" : "Allocate"}
-  </button>
-</Link> */}
-{/* {row.driverName || row.guide ? (
-  <Link href={`/dashboard/allocate/${row.bookingId}`}>
-    <button className="text-orange-600 underline">
-      Modify
-    </button>
-  </Link>
-) : (
-  <Link href={`/dashboard/allocate/${row.bookingId}`}>
-    <button className="text-green-600 underline">
-      Allocate
-    </button>
-  </Link>
-)} */}
+                        <Link href={`/Reports/duty-chart/allocate/${row.bookingId}`}>
+                          <Button size="sm" variant="outline">
+                            Allocate
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-600 text-sm font-medium">
+                          Allocated
+                        </span>
 
-{/* <td>
-  {row.driverName && row.guide ? (
-    <Link href={`/dashboard/allocate/${row.bookingId}?jobId=${row.id}`}>
-      <button className="text-orange-600 underline">
-        Modify
-      </button>
-    </Link>
-  ) : (
-    <Link href={`/dashboard/allocate/${row.bookingId}?jobId=${row.id}`}>
-      <button className="text-green-600 underline">
-        Allocate
-      </button>
-    </Link>
-  )}
-</td> */}
-          </div>  
-        </td>
+                        <Link href={`/Reports/duty-chart/allocate/${row.bookingId}`}>
+                          <Button size="sm" variant="outline">
+                            Modify
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
 
-        {/* 6. Pickup Point / Reporting time */}
-        <td className="p-2 text-left">
-          <div><b>Location:</b> {row.pickupLocation || "-"}</div>
-          <div><b>Reporting:</b> {row.reportingTime || "-"}</div>
-          <div><b>Pickup:</b> {row.pickupTime  || "-"}</div>
-        </td>
+                {/* 6 */}
+                <TableCell className="text-left">
+                  <div><b>Location:</b> {row.pickupLocation || "-"}</div>
+                  <div><b>Report:</b> {row.reportingTime || "-"}</div>
+                  <div><b>Pickup:</b> {row.pickupTime || "-"}</div>
+                </TableCell>
 
-        {/* 7. Drop Off Place */}
-        <td className="p-2">
-          {row.dropLocation || "-"}
-        </td>
+                {/* 7 */}
+                <TableCell>
+                  {row.dropLocation || "-"}
+                </TableCell>
 
-        {/* 8. Print Merged Duty Slip */}
-        <td className="p-2">
-          <button className="bg-blue-600 text-white px-3 py-1 text-xs rounded">
-            Print
-          </button>
-        </td>
+                {/* 8 */}
+                <TableCell>
+                    <Button variant="ghost" className="p-2">
+                      <Printer className="text-red-600 size-xl" />
+                    </Button>
+                </TableCell>
 
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan={8} className="p-4 text-center">
-        No Data Found
-      </td>
-    </tr>
-  )}
-</tbody>
-          </table>
-        )}
-      </div>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center py-4">
+                No Data Found
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+
+      </Table>
+    )}
+  </CardContent>
+</Card>
+</div>
     </div>
   );
 }

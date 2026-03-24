@@ -35,7 +35,8 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
       setDropDownloading, vehicle_type_required,
  pickup_location_id,
  dropoff_location_id,
- job_status_id,},
+ job_status_id,
+ guide_language_required,},
     form: { handleSubmit, errors, onSubmit, control, setValue },
     actions: {
       handleDelete,
@@ -350,6 +351,90 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
             errors={errors}
           />
         </div>
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
+      <div className="flex items-center">
+        <div className="flex-1">
+          <RHFTextField
+            name="client"
+            label="Client"
+            control={control}
+            errors={errors}
+          />
+        </div>
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
+      <div className="flex items-center">
+        <div className="flex-1">
+          <RHFTextField
+            name="agent"
+            label="Agent"
+            control={control}
+            errors={errors}
+          />
+        </div>
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
+      <div className="flex items-center">
+        <div className="flex-1">
+          <RHFTextField
+            name="address"
+            label="Address"
+            control={control}
+            errors={errors}
+          />
+        </div>
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <RHFSelect
+            name="guide_language_required"
+            label="Guide Language Required"
+            control={control}
+            errors={errors}
+            options={guide_language_required.map((op) => {
+              return {
+                value: Number(op.id),
+                label: op.name,
+              };
+            })}
+          />
+        </div>
+        {/*<SpinningRefreshIcon
+          spinning={dropDownloading["guide_language_required"]}
+          onClick={() =>
+            handleRefresh("guide_language_required", handleDropDown)
+          }
+        />*/}
         {/*<LabelWithTooltip
           text=""
           tooltip="Set display order (lower numbers appear first)"

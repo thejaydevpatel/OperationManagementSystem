@@ -6,11 +6,15 @@ export async function GET() {
     const result = await pool.query(`
       SELECT 
         v.id,
-        vt.name AS name
+        v.name AS name,
+        v.vehicle_type_id,
+        vt.name AS vehicle_type_name,
+        v.supplier_id
       FROM vehicles_lookup_vehicles_table v
       LEFT JOIN vehicle_types_lookup_vehicle_types_table vt
         ON vt.id = v.vehicle_type_id
-      WHERE v.is_deleted = false
+      WHERE COALESCE(v.is_deleted, false) = false
+      ORDER BY v.name ASC
     `);
 
     return NextResponse.json(result.rows);

@@ -12,13 +12,14 @@ export interface DriversTableEntity {
   deleted_by?: string;
   tenant_id?: string;
   id: number;
+  supplier_type: number;
+  supplier_id?: number;
   name: string;
   phone: string;
   license_number: string;
-  supplier_id?: number;
   driver_status_id: number;
   last_known_location_id?: number;
   last_duty_end_time?: string;
   max_daily_hours: number;
-  note?: string;
+  notes?: string;
 }

@@ -10,6 +10,7 @@ export async function GET(req: Request) {
   const to = searchParams.get("to");
   const fileNo = searchParams.get("fileNo");
   const locationType = searchParams.get("locationType");
+  const allocationType = searchParams.get("allocationType");
 
   console.log("Filters:", { driver, location, from, to });
 
@@ -46,6 +47,15 @@ if (location && locationType === "DropOff") {
   conditions.push(`j."dropoff_location_id" = $${index++}`);
   values.push(location);
 }
+// Allocation Type Filter
+if (allocationType === "Allocate") {
+  conditions.push(`d."id" IS NULL AND gl.guide_name IS NULL`);
+}
+
+if (allocationType === "Modify") {
+  conditions.push(`(d."id" IS NOT NULL OR gl.guide_name IS NOT NULL)`);
+}
+
 const whereClause =
   conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -58,15 +68,21 @@ const whereClause =
     TO_CHAR(j."scheduled_start_time", 'HH24:MI') AS "pickupTime",
     TO_CHAR(j."scheduled_start_time" - INTERVAL '30 minutes', 'HH24:MI') AS "reportingTime",
     j."pax",
+    j."client",
+    j."agent",
+    j."address",
+    j."guide_language_required",
     j."service_type",
     j."notes" AS "remark",
+    
 
     vt."name" AS "vehicleType",
 
     d."name" AS "driverName",
 
     gl.guide_name AS "guideName",
-    gl.language_name AS "guideLanguage",
+   lm.name AS "guideLanguage",
+   gl.language_name AS "assignedLanguage" ,
     COALESCE(ga.guide_count, 0) AS "noOfGuide",
 
     v."registration_number" AS "registrationNumber",
@@ -76,8 +92,10 @@ const whereClause =
     lp."name" AS "pickupLocation",
     ld."name" AS "dropLocation",
 
-    s."name" AS "status"
-
+    s."name" AS "status",
+ 
+COALESCE(da_cost.vehicle_price, 0) AS "vehiclePrice",
+COALESCE(ga_cost.guide_price, 0) AS "guidePrice"
     
 
   FROM "operation_jobs_lookup_operation_jobs_table" j
@@ -101,6 +119,9 @@ const whereClause =
   LEFT JOIN "location_master_lookup_location_master_table" ld
     ON ld."id" = j."dropoff_location_id"
 
+    LEFT JOIN language_master_lookup_language_master_table lm
+  ON lm.id = j."guide_language_required"
+
   LEFT JOIN "status_master_lookup_status_master_table" s
     ON s."id" = j."job_status_id"
 
@@ -112,6 +133,24 @@ const whereClause =
     WHERE is_deleted = false
     GROUP BY job_id
 ) ga ON ga.job_id = j.id
+
+LEFT JOIN (
+    SELECT 
+        job_id,
+        SUM(manual_cost) AS vehicle_price
+    FROM driver_allocation_lookup_driver_allocation_table
+    WHERE is_deleted = false
+    GROUP BY job_id
+) da_cost ON da_cost.job_id = j.id
+
+LEFT JOIN (
+    SELECT 
+        job_id,
+        SUM(extra_charge) AS guide_price
+    FROM guide_allocation_lookup_guide_allocation_table
+    WHERE is_deleted = false
+    GROUP BY job_id
+) ga_cost ON ga_cost.job_id = j.id
 
 LEFT JOIN (
     SELECT 

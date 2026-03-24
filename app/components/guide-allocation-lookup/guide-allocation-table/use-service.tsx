@@ -27,11 +27,13 @@ import { useUnsavedChangesWarning } from "@/hooks/use-unsaved-changes-warning";
 const getSchema = (isEdit: boolean) =>
   z.object({
   job_id: z.number().int(),
+  supplier_id: z.number().int(),
   guide_id: z.number().int(),
   allocation_status_id: z.number().int(),
   report_time: z.string().optional(),
   actual_start_time: z.string().optional(),
   actual_end_time: z.string().optional(),
+  extra_charge: z.string(),
   });
 
 
@@ -68,12 +70,14 @@ const router = useRouter();
   const [modal, setModal] = useState<boolean>(false);
   
  const [job_id, setJob_id] = useState<any[]>([]);
+ const [supplier_id, setSupplier_id] = useState<any[]>([]);
  const [guide_id, setGuide_id] = useState<any[]>([]);
  const [allocation_status_id, setAllocation_status_id] = useState<any[]>([]);
 
 
 const dropdownEndpoints: Record<string, string | null> = {
   job_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/operation-jobs-lookup/operation-jobs-table?pageSize=9999`,
+  supplier_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/supplier-master-lookup/supplier-master-table?pageSize=9999`,
   guide_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/tour-guides-lookup/tour-guides-table?pageSize=9999`,
   allocation_status_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/status-master-lookup/status-master-table?pageSize=9999`,
 };
@@ -104,9 +108,10 @@ const dropdownEndpoints: Record<string, string | null> = {
   report_time: "",
   actual_start_time: "",
   actual_end_time: "",
+  extra_charge: 0,
 },  
     // resolver: zodResolver(getSchema(false)),
-      // defaultValues:{}
+      // defaultValues:{"extra_charge":0}
   });
 
   //  useUnsavedChangesWarning(isDirty);
@@ -224,6 +229,11 @@ const dropdownEndpoints: Record<string, string | null> = {
     return;
   }
 
+  if (values.supplier_id === undefined || values.supplier_id === null) {
+    toast.error("supplier_id is required");
+    return;
+  }
+
   if (values.guide_id === undefined || values.guide_id === null) {
     toast.error("guide_id is required");
     return;
@@ -231,6 +241,11 @@ const dropdownEndpoints: Record<string, string | null> = {
 
   if (values.allocation_status_id === undefined || values.allocation_status_id === null) {
     toast.error("allocation_status_id is required");
+    return;
+  }
+
+  if (values.extra_charge === undefined || values.extra_charge === null) {
+    toast.error("extra_charge is required");
     return;
   }
   
@@ -402,6 +417,14 @@ await nevigateListOrEdit(true);
     }
     }
 
+if (key === "supplier_id") {
+      const endPoint =dropdownEndpoints[key]; 
+      if (endPoint) {
+      const result = await handleRefreshAPIs(endPoint);
+      setSupplier_id(result.data);
+    }
+    }
+
 if (key === "guide_id") {
       const endPoint =dropdownEndpoints[key]; 
       if (endPoint) {
@@ -430,6 +453,7 @@ if (key === "allocation_status_id") {
       order,
       setOrder,   dropDownloading,
       setDropDownloading,job_id,
+ supplier_id,
  guide_id,
  allocation_status_id, },
     form: { handleSubmit, errors, onSubmit, control,setValue },

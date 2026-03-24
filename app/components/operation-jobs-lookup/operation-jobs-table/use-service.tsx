@@ -38,6 +38,10 @@ const getSchema = (isEdit: boolean) =>
   job_status_id: z.number().int(),
   priority: z.number().int(),
   notes: z.string().optional(),
+  client: z.string().min(1, "client is required"),
+  agent: z.string().min(1, "agent is required"),
+  address: z.string().min(1, "address is required"),
+  guide_language_required: z.number().int().optional(),
   });
 
 
@@ -77,6 +81,7 @@ const router = useRouter();
  const [pickup_location_id, setPickup_location_id] = useState<any[]>([]);
  const [dropoff_location_id, setDropoff_location_id] = useState<any[]>([]);
  const [job_status_id, setJob_status_id] = useState<any[]>([]);
+ const [guide_language_required, setGuide_language_required] = useState<any[]>([]);
 
 
 const dropdownEndpoints: Record<string, string | null> = {
@@ -84,6 +89,7 @@ const dropdownEndpoints: Record<string, string | null> = {
   pickup_location_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-master-lookup/location-master-table?pageSize=9999`,
   dropoff_location_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-master-lookup/location-master-table?pageSize=9999`,
   job_status_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/status-master-lookup/status-master-table?pageSize=9999`,
+  guide_language_required: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/language-master-lookup/language-master-table?pageSize=9999`,
 };
 
   const api = getOperationJobsTableEntityApi(module);
@@ -117,9 +123,12 @@ const dropdownEndpoints: Record<string, string | null> = {
   scheduled_end_time: "",
   priority: 0,
   notes: "",
+  client: "",
+  agent: "",
+  address: "",
 },  
     // resolver: zodResolver(getSchema(false)),
-      // defaultValues:{"external_booking_id":"","booking_type":"","service_type":"","pax":0,"priority":0}
+      // defaultValues:{"external_booking_id":"","booking_type":"","service_type":"","pax":0,"priority":0,"client":"","agent":"","address":""}
   });
 
   //  useUnsavedChangesWarning(isDirty);
@@ -269,6 +278,21 @@ const dropdownEndpoints: Record<string, string | null> = {
 
   if (values.priority === undefined || values.priority === null) {
     toast.error("priority is required");
+    return;
+  }
+
+  if (values.client === undefined || values.client === null) {
+    toast.error("client is required");
+    return;
+  }
+
+  if (values.agent === undefined || values.agent === null) {
+    toast.error("agent is required");
+    return;
+  }
+
+  if (values.address === undefined || values.address === null) {
+    toast.error("address is required");
     return;
   }
   
@@ -463,6 +487,14 @@ if (key === "job_status_id") {
       setJob_status_id(result.data);
     }
     }
+
+if (key === "guide_language_required") {
+      const endPoint =dropdownEndpoints[key]; 
+      if (endPoint) {
+      const result = await handleRefreshAPIs(endPoint);
+      setGuide_language_required(result.data);
+    }
+    }
   };
 
   return {
@@ -478,7 +510,8 @@ if (key === "job_status_id") {
       setDropDownloading,vehicle_type_required,
  pickup_location_id,
  dropoff_location_id,
- job_status_id, },
+ job_status_id,
+ guide_language_required, },
     form: { handleSubmit, errors, onSubmit, control,setValue },
     actions: { handleStatusChange, handleDelete, handleClear, handleEdit, closeModal, openModal,  handleView, handleOnListToggle,  handleRefresh,
       handleDropDown,  },

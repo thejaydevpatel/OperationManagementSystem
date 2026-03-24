@@ -174,6 +174,9 @@ const [vehicle_id, setVehicle_id] = React.useState<any[]>([]);
 const [allocation_status_id, setAllocation_status_id] = React.useState<any[]>([]);
 
 
+const [supplier_id, setSupplier_id] = React.useState<any[]>([]);
+
+
   // read page from url
   React.useEffect(() => {
     const pageParam = searchParams.get("page");
@@ -224,6 +227,17 @@ React.useEffect(() => {
   };
 
   fetchAllocation_status_id();
+}, []);
+
+
+React.useEffect(() => {
+  const fetchSupplier_id = async () => {
+    const res = await fetch("/api/supplier-master-lookup/supplier-master-table?pageSize=9999");
+    const data = await res.json();
+    setSupplier_id(data.data || []);
+  };
+
+  fetchSupplier_id();
 }, []);
 
   
@@ -320,7 +334,7 @@ const filteredRows = rows.filter((row) => {
                 >
                   <Button className="min-w-[150px]">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add New Driver Allocation
+                    Add New One Table
                   </Button>
                 </Link>
 
@@ -371,11 +385,13 @@ const filteredRows = rows.filter((row) => {
 <TableHead>Driver Id</TableHead>
 <TableHead>Vehicle Id</TableHead>
 <TableHead>Allocation Status Id</TableHead>
+<TableHead>Supplier Id</TableHead>
 <TableHead>Start Time</TableHead>
 <TableHead>End Time</TableHead>
+<TableHead>Manual Cost</TableHead>
 <TableHead>Notes</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Allocation Time</TableHead>
+              {/*<TableHead>Used/Unused</TableHead>*/}
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -439,6 +455,13 @@ const filteredRows = rows.filter((row) => {
 
     <TableCell>
       <p className="text-muted-foreground text-sm font-normal">
+    {supplier_id.find(o => Number(o.id) === Number(row.supplier_id))?.supplier_type || "-"}
+      </p>
+    </TableCell>
+  
+
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
         {row.start_time
           ? new Date(row.start_time).toLocaleString("en-GB", {
               day: "2-digit",
@@ -469,6 +492,13 @@ const filteredRows = rows.filter((row) => {
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
+      {row.manual_cost || "-"}
+    </p>
+  </TableCell>
+
+
+  <TableCell>
+    <p className="text-muted-foreground text-sm font-normal">
       {row.notes || "-"}
     </p>
   </TableCell>
@@ -487,11 +517,11 @@ const filteredRows = rows.filter((row) => {
                               </div>
                             </TableCell>
 
-                            <TableCell>
-                              {row.created_at
-                                ? new Date(row.created_at).toLocaleString()
-                                : "-"}
-                            </TableCell>
+                             {/* <TableCell>
+                              <StatusBadge
+                                label={row.is_used ? "Used" : "Unused"}
+                              />
+                            </TableCell> */}
 
                             <TableCell>
                               <DropdownMenu>

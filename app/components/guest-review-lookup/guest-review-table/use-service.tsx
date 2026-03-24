@@ -103,7 +103,7 @@ const dropdownEndpoints: Record<string, string | null> = {
  defaultValues: {
   review_target_type: "",
   review_target_id: 0,
-  rating: 0,
+  rating: "",
   review_text: "",
   guest_name: "",
   guest_email: "",

@@ -12,12 +12,13 @@ export async function GET(req: Request) {
         da."id" AS id,
         da."driver_id" AS "driver",
         da."vehicle_id" AS "vehicle",
-
-        v."supplier_id" AS "supplier",   
+        
+        da."supplier_id" AS "supplier",  
 
         da."start_time" AS "startTime",
         da."end_time" AS "endTime",
-        da."notes" AS "manualCost"
+        da."manual_cost" AS "manualCost",
+        da."notes" AS "remark"
 
       FROM "driver_allocation_lookup_driver_allocation_table" da
 

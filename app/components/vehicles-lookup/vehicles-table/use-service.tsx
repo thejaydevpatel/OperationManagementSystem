@@ -26,12 +26,13 @@ import { useUnsavedChangesWarning } from "@/hooks/use-unsaved-changes-warning";
 
 const getSchema = (isEdit: boolean) =>
   z.object({
+  name: z.string().min(1, "name is required"),
   vehicle_type_id: z.number().int(),
-  registration_number: z.string().min(1, "registration_number is required").max(50),
+  registration_number: z.string().min(1, "registration_number is required").max(150),
   owner_type: z.string().min(1, "owner_type is required"),
-  supplier_id: z.number().int().optional(),
+  supplier_id: z.number().int(),
   vehicle_status_id: z.number().int(),
-  additional_notes: z.string().optional(),
+  additional_notes: z.string(),
   });
 
 
@@ -101,12 +102,13 @@ const dropdownEndpoints: Record<string, string | null> = {
     formState: { errors },
   } = useForm<VehiclesTableEntity>({
  defaultValues: {
+  name: "",
   registration_number: "",
   owner_type: "",
   additional_notes: "",
 },  
     // resolver: zodResolver(getSchema(false)),
-      // defaultValues:{"registration_number":"","owner_type":""}
+      // defaultValues:{"name":"","registration_number":"","owner_type":""}
   });
 
   //  useUnsavedChangesWarning(isDirty);
@@ -219,6 +221,11 @@ const dropdownEndpoints: Record<string, string | null> = {
   const onSubmit: SubmitHandler<VehiclesTableEntity> = async (values) => {
     // ✅ Validation
   
+  if (values.name === undefined || values.name === null) {
+    toast.error("name is required");
+    return;
+  }
+
   if (values.vehicle_type_id === undefined || values.vehicle_type_id === null) {
     toast.error("vehicle_type_id is required");
     return;
@@ -234,8 +241,18 @@ const dropdownEndpoints: Record<string, string | null> = {
     return;
   }
 
+  if (values.supplier_id === undefined || values.supplier_id === null) {
+    toast.error("supplier_id is required");
+    return;
+  }
+
   if (values.vehicle_status_id === undefined || values.vehicle_status_id === null) {
     toast.error("vehicle_status_id is required");
+    return;
+  }
+
+  if (values.additional_notes === undefined || values.additional_notes === null) {
+    toast.error("additional_notes is required");
     return;
   }
   

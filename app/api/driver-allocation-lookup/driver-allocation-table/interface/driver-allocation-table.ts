@@ -16,7 +16,9 @@ export interface DriverAllocationTableEntity {
   driver_id: number;
   vehicle_id: number;
   allocation_status_id: number;
+  supplier_id?: number;
   start_time?: string;
   end_time?: string;
+  manual_cost?: string;
   notes?: string;
 }

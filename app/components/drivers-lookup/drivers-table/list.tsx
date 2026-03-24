@@ -162,6 +162,9 @@ const List: React.FC<drivers_tablePaginationTableProps> = ({
    const searchParams = useSearchParams();
   
    
+const [supplier_type, setSupplier_type] = React.useState<any[]>([]);
+
+
 const [supplier_id, setSupplier_id] = React.useState<any[]>([]);
 
 
@@ -179,6 +182,17 @@ const [last_known_location_id, setLast_known_location_id] = React.useState<any[]
     }
   }, [searchParams]);
   
+
+React.useEffect(() => {
+  const fetchSupplier_type = async () => {
+    const res = await fetch("/api/supplier-types-lookup/supplier-types-table?pageSize=9999");
+    const data = await res.json();
+    setSupplier_type(data.data || []);
+  };
+
+  fetchSupplier_type();
+}, []);
+
 
 React.useEffect(() => {
   const fetchSupplier_id = async () => {
@@ -306,7 +320,7 @@ const filteredRows = rows.filter((row) => {
                 >
                   <Button className="min-w-[150px]">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add New Driver
+                    Add New One Table
                   </Button>
                 </Link>
 
@@ -353,15 +367,16 @@ const filteredRows = rows.filter((row) => {
           <TableHeader>
             <TableRow>
               <TableHead>Sr No.</TableHead>
-              <TableHead>Name</TableHead>
+              <TableHead>Supplier Type</TableHead>
+<TableHead>Supplier Id</TableHead>
+<TableHead>Name</TableHead>
 <TableHead>Phone</TableHead>
 <TableHead>License Number</TableHead>
-<TableHead>Supplier Id</TableHead>
 <TableHead>Driver Status Id</TableHead>
 <TableHead>Last Known Location Id</TableHead>
 <TableHead>Last Duty End Time</TableHead>
 <TableHead>Max Daily Hours</TableHead>
-<TableHead>Note</TableHead>
+<TableHead>Notes</TableHead>
               <TableHead>Status</TableHead>
               {/*<TableHead>Used/Unused</TableHead>*/}
               <TableHead>Actions</TableHead>
@@ -397,6 +412,20 @@ const filteredRows = rows.filter((row) => {
                             <TableCell>{index + 1}</TableCell>
 
                             
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
+    {supplier_type.find(o => Number(o.id) === Number(row.supplier_type))?.name || "-"}
+      </p>
+    </TableCell>
+  
+
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
+    {supplier_id.find(o => Number(o.id) === Number(row.supplier_id))?.name || "-"}
+      </p>
+    </TableCell>
+  
+
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
       {row.name || "-"}
@@ -420,13 +449,6 @@ const filteredRows = rows.filter((row) => {
 
     <TableCell>
       <p className="text-muted-foreground text-sm font-normal">
-    {supplier_id.find(o => Number(o.id) === Number(row.supplier_id))?.name || "-"}
-      </p>
-    </TableCell>
-  
-
-    <TableCell>
-      <p className="text-muted-foreground text-sm font-normal">
     {driver_status_id.find(o => Number(o.id) === Number(row.driver_status_id))?.name || "-"}
       </p>
     </TableCell>
@@ -439,14 +461,20 @@ const filteredRows = rows.filter((row) => {
     </TableCell>
   
 
-  <TableCell>
-    <p className="text-muted-foreground text-sm font-normal">
-      {row.last_duty_end_time
-    ? new Date(row.last_duty_end_time).toLocaleString()
-    : "-"}
-    </p>
-  </TableCell>
-
+    <TableCell>
+      <p className="text-muted-foreground text-sm font-normal">
+        {row.last_duty_end_time
+          ? new Date(row.last_duty_end_time).toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "-"}
+      </p>
+    </TableCell>
+  
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
@@ -457,7 +485,7 @@ const filteredRows = rows.filter((row) => {
 
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
-      {row.note || "-"}
+      {row.notes || "-"}
     </p>
   </TableCell>
 

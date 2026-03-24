@@ -26,8 +26,9 @@ import { useUnsavedChangesWarning } from "@/hooks/use-unsaved-changes-warning";
 
 const getSchema = (isEdit: boolean) =>
   z.object({
+  supplier_type: z.number().int(),
   name: z.string().min(1, "name is required").max(200),
-  supplier_type: z.string().min(1, "supplier_type is required"),
+  service_type: z.string().min(1, "service_type is required"),
   contact_person: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
@@ -68,10 +69,12 @@ const router = useRouter();
   const [editId, setEditId] = useState<number>(0);
   const [modal, setModal] = useState<boolean>(false);
   
+ const [supplier_type, setSupplier_type] = useState<any[]>([]);
  const [status_id, setStatus_id] = useState<any[]>([]);
 
 
 const dropdownEndpoints: Record<string, string | null> = {
+  supplier_type: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/supplier-types-lookup/supplier-types-table?pageSize=9999`,
   status_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/status-master-lookup/status-master-table?pageSize=9999`,
 };
 
@@ -99,14 +102,14 @@ const dropdownEndpoints: Record<string, string | null> = {
   } = useForm<SupplierMasterTableEntity>({
  defaultValues: {
   name: "",
-  supplier_type: "",
+  service_type: "",
   contact_person: "",
   phone: "",
   email: "",
   address: "",
 },  
     // resolver: zodResolver(getSchema(false)),
-      // defaultValues:{"name":"","supplier_type":"","contact_person":"","phone":"","email":""}
+      // defaultValues:{"name":"","service_type":"","contact_person":"","phone":"","email":""}
   });
 
   //  useUnsavedChangesWarning(isDirty);
@@ -219,13 +222,18 @@ const dropdownEndpoints: Record<string, string | null> = {
   const onSubmit: SubmitHandler<SupplierMasterTableEntity> = async (values) => {
     // ✅ Validation
   
+  if (values.supplier_type === undefined || values.supplier_type === null) {
+    toast.error("supplier_type is required");
+    return;
+  }
+
   if (values.name === undefined || values.name === null) {
     toast.error("name is required");
     return;
   }
 
-  if (values.supplier_type === undefined || values.supplier_type === null) {
-    toast.error("supplier_type is required");
+  if (values.service_type === undefined || values.service_type === null) {
+    toast.error("service_type is required");
     return;
   }
 
@@ -394,7 +402,15 @@ await nevigateListOrEdit(true);
      
 
     await new Promise((resolve) => setTimeout(resolve, 500));
-      if (key === "status_id") {
+      if (key === "supplier_type") {
+      const endPoint =dropdownEndpoints[key]; 
+      if (endPoint) {
+      const result = await handleRefreshAPIs(endPoint);
+      setSupplier_type(result.data);
+    }
+    }
+
+if (key === "status_id") {
       const endPoint =dropdownEndpoints[key]; 
       if (endPoint) {
       const result = await handleRefreshAPIs(endPoint);
@@ -413,7 +429,8 @@ await nevigateListOrEdit(true);
       setSortBy,
       order,
       setOrder,   dropDownloading,
-      setDropDownloading,status_id, },
+      setDropDownloading,supplier_type,
+ status_id, },
     form: { handleSubmit, errors, onSubmit, control,setValue },
     actions: { handleStatusChange, handleDelete, handleClear, handleEdit, closeModal, openModal,  handleView, handleOnListToggle,  handleRefresh,
       handleDropDown,  },

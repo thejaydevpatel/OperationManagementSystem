@@ -674,7 +674,7 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
                      <CardContent className="p-6">
 
                       {/* ✅ Replaced Grid container with Tailwind grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         ${formFields}
                       </div>
 

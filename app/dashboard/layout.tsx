@@ -125,6 +125,7 @@ const menuItems: MenuItem[] = [
       { label: "Language", href: "/dashboard/language-master-lookup/language-master-table/list", icon: Globe },
       { label: "Supplier", href: "/dashboard/supplier-master-lookup/supplier-master-table/list", icon: Truck },
       { label: "Vehicle Types", href: "/dashboard/vehicle-types-lookup/vehicle-types-table/list", icon: Car },
+      { label: "Supplier Types", href: "/dashboard/supplier-types-lookup/supplier-types-table/list", icon: Truck },
     ],
   },
 
@@ -140,6 +141,7 @@ const menuItems: MenuItem[] = [
       { label: "Vehicles", href: "/dashboard/vehicles-lookup/vehicles-table/list", icon: Car },
       { label: "Vehicle Usage Log", href: "/dashboard/vehicle-usage-log-lookup/vehicle-usage-log-table/list", icon: FileText },
       { label: "Tour Guides", href: "/dashboard/tour-guides-lookup/tour-guides-table/list", icon: Map },
+      { label: "Guide language Price", href: "/dashboard/guide-price-lookup/guide-price-table/list", icon: Map },
     ],
   },
 
@@ -251,26 +253,26 @@ React.useEffect(() => {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen flex-col w-full">
+      <div className="flex min-h-screen flex-col w-full rtl:flex-col-reverse">
 
         <Header />
 
         <div className="flex flex-1">
 
           {/* Sidebar */}
-          <Sidebar>
+          <Sidebar className="rtl:right-auto rtl:left-auto">
 
             <SidebarContent className="mt-14">
               <SidebarGroup>
                 <SidebarGroupContent>
-{/* Search Box */}
-<div className="p-2">
-  <Input
-    placeholder="Search menu..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-  />
-</div>
+                  {/* Search Box */}
+                  <div className="p-2">
+                    <Input
+                      placeholder="Search menu..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
                
 
 <SidebarMenu>
@@ -283,7 +285,7 @@ React.useEffect(() => {
         <SidebarMenuItem key={item.key}>
           <SidebarMenuButton asChild>
             <Link href={item.href || "#"}>
-              <Icon className="mr-2 h-4 w-4" />
+              <Icon className="me-2 h-4 w-4" />
               {item.label}
             </Link>
           </SidebarMenuButton>
@@ -302,7 +304,7 @@ React.useEffect(() => {
           <CollapsibleTrigger asChild>
             <SidebarMenuButton className="w-full justify-between">
               <div className="flex items-center">
-                <Icon className="mr-2 h-4 w-4" />
+                <Icon className="me-2 h-4 w-4" />
                 {item.label}
               </div>
 
@@ -331,7 +333,7 @@ React.useEffect(() => {
                         }
                       >
                         {ChildIcon && (
-                          <ChildIcon className="mr-2 h-4 w-4" />
+                          <ChildIcon className="me-2 h-4 w-4" />
                         )}
                         {child.label}
                       </Link>
@@ -362,7 +364,7 @@ React.useEffect(() => {
 
 
           {/* Main Content */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 mt-14 overflow-hidden">
             <DynamicBreadcrumb />
             {children}
           </main>

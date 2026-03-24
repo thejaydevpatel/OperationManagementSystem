@@ -26,15 +26,16 @@ import { useUnsavedChangesWarning } from "@/hooks/use-unsaved-changes-warning";
 
 const getSchema = (isEdit: boolean) =>
   z.object({
+  supplier_type: z.number().int(),
+  supplier_id: z.number().int().optional(),
   name: z.string().min(1, "name is required").max(150),
   phone: z.string().min(1, "phone is required").max(20),
   license_number: z.string().min(1, "license_number is required").max(50),
-  supplier_id: z.number().int().optional(),
   driver_status_id: z.number().int(),
   last_known_location_id: z.number().int().optional(),
   last_duty_end_time: z.string().optional(),
   max_daily_hours: z.number().int(),
-  note: z.string().optional(),
+  notes: z.string().optional(),
   });
 
 
@@ -70,12 +71,14 @@ const router = useRouter();
   const [editId, setEditId] = useState<number>(0);
   const [modal, setModal] = useState<boolean>(false);
   
+ const [supplier_type, setSupplier_type] = useState<any[]>([]);
  const [supplier_id, setSupplier_id] = useState<any[]>([]);
  const [driver_status_id, setDriver_status_id] = useState<any[]>([]);
  const [last_known_location_id, setLast_known_location_id] = useState<any[]>([]);
 
 
 const dropdownEndpoints: Record<string, string | null> = {
+  supplier_type: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/supplier-types-lookup/supplier-types-table?pageSize=9999`,
   supplier_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/supplier-master-lookup/supplier-master-table?pageSize=9999`,
   driver_status_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/status-master-lookup/status-master-table?pageSize=9999`,
   last_known_location_id: `${process.env.NEXT_PUBLIC_REACT_APP_API_URL}/location-master-lookup/location-master-table?pageSize=9999`,
@@ -109,7 +112,7 @@ const dropdownEndpoints: Record<string, string | null> = {
   license_number: "",
   last_duty_end_time: "",
   max_daily_hours: 0,
-  note: "",
+  notes: "",
 },  
     // resolver: zodResolver(getSchema(false)),
       // defaultValues:{"name":"","phone":"","license_number":"","max_daily_hours":0}
@@ -225,6 +228,11 @@ const dropdownEndpoints: Record<string, string | null> = {
   const onSubmit: SubmitHandler<DriversTableEntity> = async (values) => {
     // ✅ Validation
   
+  if (values.supplier_type === undefined || values.supplier_type === null) {
+    toast.error("supplier_type is required");
+    return;
+  }
+
   if (values.name === undefined || values.name === null) {
     toast.error("name is required");
     return;
@@ -410,7 +418,15 @@ await nevigateListOrEdit(true);
      
 
     await new Promise((resolve) => setTimeout(resolve, 500));
-      if (key === "supplier_id") {
+      if (key === "supplier_type") {
+      const endPoint =dropdownEndpoints[key]; 
+      if (endPoint) {
+      const result = await handleRefreshAPIs(endPoint);
+      setSupplier_type(result.data);
+    }
+    }
+
+if (key === "supplier_id") {
       const endPoint =dropdownEndpoints[key]; 
       if (endPoint) {
       const result = await handleRefreshAPIs(endPoint);
@@ -445,7 +461,8 @@ if (key === "last_known_location_id") {
       setSortBy,
       order,
       setOrder,   dropDownloading,
-      setDropDownloading,supplier_id,
+      setDropDownloading,supplier_type,
+ supplier_id,
  driver_status_id,
  last_known_location_id, },
     form: { handleSubmit, errors, onSubmit, control,setValue },

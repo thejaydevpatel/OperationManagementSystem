@@ -431,8 +431,9 @@ const handleSubmit = async () => {
             {fields.map((f, idx) => (
             <TableRow key={idx} >
               <TableCell>
-                <input
-                     className="bg-white border-2 border-primary/40 focus-visible:ring-primary shadow-sm"
+                <Input
+                    //  className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
+                     className="w-40"                    
                       value={f.name}
                       onChange={(e) => updateField(idx, "name", e.target.value)}
                       disabled={f.system}
@@ -484,9 +485,10 @@ const handleSubmit = async () => {
               </TableCell>
               <TableCell>
                 {f.type === "VARCHAR" && (
-                      <input
+                      <Input
+                      className="w-30"
                         //  className="bg-white border w-20 text-center border-primary/50"
-                        className="bg-white border-2 border-primary/40 w-20 focus-visible:ring-primary shadow-sm"
+                        // className="bg-white dark:bg-gray-800 border-primary/40 w-20 focus-visible:ring-primary shadow-sm"
                         value={f.size || ""}
                         onChange={(e) => updateField(idx, "size", e.target.value)}
                         disabled={f.system}
@@ -530,8 +532,9 @@ const handleSubmit = async () => {
                     />
               </TableCell>
               <TableCell>
-                <input        
-                      className="bg-white border-2 border-primary/40 focus-visible:ring-primary shadow-sm"
+                <Input        
+                      className="w-40"
+                      // className="bg-white dark:bg-gray-800  border-primary/40 focus-visible:ring-primary shadow-sm"
                       value={f.defaultValue}
                       onChange={(e) =>
                         updateField(idx, "defaultValue", e.target.value)
@@ -540,7 +543,8 @@ const handleSubmit = async () => {
                     />
               </TableCell>
               <TableCell>
-                <input
+                <Input
+                      className="w-40"
                       value={f.constraints}
                       placeholder="e.g., UNIQUE, CHECK (age > 0)"
                       onChange={(e) =>
@@ -561,7 +565,9 @@ const handleSubmit = async () => {
               </TableCell>
               <TableCell>
                 {f.foreignKey && (
-                      <input
+                      <Input 
+                      className="w-40"
+                      // className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
                         value={f.refTable || ""}
                         onChange={(e) =>
                           updateField(idx, "refTable", e.target.value)
@@ -571,7 +577,9 @@ const handleSubmit = async () => {
               </TableCell>
               <TableCell>
                 {f.foreignKey && (
-                      <input
+                      <Input 
+                      className="w-40"
+                      // className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
                         value={f.refColumn || ""}
                         onChange={(e) =>
                           updateField(idx, "refColumn", e.target.value)
@@ -622,12 +630,9 @@ const handleSubmit = async () => {
       </div>
 
       <div className="mt-14 flex justify-center gap-4 p-4" >
-        <Button onClick={addField} className="mt-10">
+        <Button onClick={addField} className="">
           + Add Column
-        </Button>
-        {/* <Button onClick={handleSubmit}  className="cursor-pointer">
-          Generate
-        </Button> */}
+        </Button> 
         <Button onClick={handleGenerateClick}>
           Generate
         </Button>

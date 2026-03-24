@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const offset = (page - 1) * pageSize;
 
     // Whitelist sort fields
-    const allowedSortFields = ["is_used","is_deleted","is_active","created_at","updated_at","created_by","updated_by","host_ip","url","deleted_at","deleted_by","tenant_id","id","external_booking_id","booking_type","service_type","pax","vehicle_type_required","pickup_location_id","dropoff_location_id","scheduled_start_time","scheduled_end_time","job_status_id","priority","notes"]; // adjust to your table columns
+    const allowedSortFields = ["is_used","is_deleted","is_active","created_at","updated_at","created_by","updated_by","host_ip","url","deleted_at","deleted_by","tenant_id","id","external_booking_id","booking_type","service_type","pax","vehicle_type_required","pickup_location_id","dropoff_location_id","scheduled_start_time","scheduled_end_time","job_status_id","priority","notes","client","agent","address","guide_language_required"]; // adjust to your table columns
     const requestedSortBy = searchParams.get("sortBy") ?? "id";
     const sortBy = allowedSortFields.includes(requestedSortBy)
       ? requestedSortBy
@@ -87,13 +87,17 @@ export async function POST(req: NextRequest) {
     const userDetails = await retriveTokenDetails(req);
     body.tenant_id = userDetails?.tenantId;
     body.created_by = userDetails?.empCode;
-    body.created_at = new Date().toISOString();
+    body.created_at = new Date();
     body.host_ip = userDetails?.userIp;
     body.url = referer && referer.trim() !== "" ? referer : req.url;
     
     
     
-
+ Object.keys(body).forEach((key) => {
+      if ((body as any)[key] === "") {
+        (body as any)[key] = null;
+      }
+    });
 
     
 

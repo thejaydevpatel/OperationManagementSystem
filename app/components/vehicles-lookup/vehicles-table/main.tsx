@@ -96,6 +96,24 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
                       <div className="grid grid-cols-1 gap-4">
                         
     <div className="col-span-1">
+      <div className="flex items-center">
+        <div className="flex-1">
+          <RHFTextField
+            name="name"
+            label="Name"
+            control={control}
+            errors={errors}
+          />
+        </div>
+        {/*<LabelWithTooltip
+          text=""
+          tooltip="Set display order (lower numbers appear first)"
+          href="/admin/docs/order-rules"
+        />*/}
+      </div>
+    </div>
+
+    <div className="col-span-1">
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <RHFSelect

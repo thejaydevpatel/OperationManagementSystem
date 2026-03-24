@@ -52,12 +52,10 @@ const Page = () => {
 
  
       <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-             Add New Supplier
-          </CardTitle>
+        <CardHeader>
+          <CardTitle>Add New Supplier Master Table</CardTitle>
+           
         </CardHeader>
-
 
         <CardContent>
           <Main module={objModule} />
