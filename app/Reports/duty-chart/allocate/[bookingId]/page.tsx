@@ -369,136 +369,136 @@ fetch("/api/duties/languages")
       </div>
    
       {/* Table Card */}
-<Card className="overflow-hidden">
-  <CardContent className="p-0">
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
 
-    <Table>
-      {/* HEADER */}
-      <TableHeader className="bg-gray-100 dark:bg-neutral-900">
-        <TableRow>
-          <TableHead className="text-center">Sr</TableHead>
-          <TableHead className="text-center">Date</TableHead>
-          <TableHead className="text-center">Time</TableHead>
-          <TableHead>From Location</TableHead>
-          <TableHead>To Location</TableHead>
-          <TableHead>Product Name</TableHead>
-          <TableHead>Vehicle Type</TableHead>
-          <TableHead className="text-center">No. Vehicles</TableHead>
-          <TableHead>Service Type</TableHead>
-          <TableHead className="text-center">No Of Pax</TableHead>
-          <TableHead className="text-center">No Of Guide</TableHead>
-          <TableHead>Guide Language</TableHead>
-          <TableHead className="text-center">Vehicle Price</TableHead>
-          <TableHead className="text-center">Guide Price</TableHead>
-          <TableHead className="text-center"></TableHead>
-          <TableHead className="text-center"></TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Status</TableHead>
-        </TableRow>
-      </TableHeader>
+          <Table>
+            {/* HEADER */}
+            <TableHeader className="bg-gray-100 dark:bg-neutral-900">
+              <TableRow>
+                <TableHead className="text-center">Sr</TableHead>
+                <TableHead className="text-center">Date</TableHead>
+                <TableHead className="text-center">Time</TableHead>
+                <TableHead>From Location</TableHead>
+                <TableHead>To Location</TableHead>
+                <TableHead>Product Name</TableHead>
+                <TableHead>Vehicle Type</TableHead>
+                <TableHead className="text-center">No. Vehicles</TableHead>
+                <TableHead>Service Type</TableHead>
+                <TableHead className="text-center">No Of Pax</TableHead>
+                <TableHead className="text-center">No Of Guide</TableHead>
+                <TableHead>Guide Language</TableHead>
+                <TableHead className="text-center">Vehicle Price</TableHead>
+                <TableHead className="text-center">Guide Price</TableHead>
+                <TableHead className="text-center"></TableHead>
+                <TableHead className="text-center"></TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
 
-      {/* BODY */}
-      <TableBody>
-        {sortedJobs.map((job, index) => (
-          <TableRow key={job.id} className="hover:bg-gray-50 dark:hover:bg-neutral-800">
+            {/* BODY */}
+            <TableBody>
+              {sortedJobs.map((job, index) => (
+                <TableRow key={job.id} className="hover:bg-gray-50 dark:hover:bg-neutral-800">
 
-            <TableCell className="text-center">{index + 1}</TableCell>
+                  <TableCell className="text-center">{index + 1}</TableCell>
 
-            <TableCell className="text-center">
-              {job.date
-                ? new Date(job.date).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "2-digit",
-                  })
-                : "-"}
-            </TableCell>
+                  <TableCell className="text-center">
+                    {job.date
+                      ? new Date(job.date).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "2-digit",
+                        })
+                      : "-"}
+                  </TableCell>
 
-            <TableCell className="text-center">
-              {job.pickupTime || "-"}
-            </TableCell>
+                  <TableCell className="text-center">
+                    {job.pickupTime || "-"}
+                  </TableCell>
 
-            <TableCell>{job.pickupLocation || "-"}</TableCell>
-            <TableCell>{job.dropLocation || "-"}</TableCell>
-            <TableCell>  {`${job.service_type || "-"} from ${job.pickupLocation || "-"} to ${job.dropLocation || "-"}`}</TableCell>
-            <TableCell>{job.vehicleType || "-"}</TableCell>
+                  <TableCell>{job.pickupLocation || "-"}</TableCell>
+                  <TableCell>{job.dropLocation || "-"}</TableCell>
+                  <TableCell>  {`${job.service_type || "-"} from ${job.pickupLocation || "-"} to ${job.dropLocation || "-"}`}</TableCell>
+                  <TableCell>{job.vehicleType || "-"}</TableCell>
 
-            <TableCell className="text-center">
-              {job.noOfVehicle || 1}
-            </TableCell>
+                  <TableCell className="text-center">
+                    {job.noOfVehicle || 1}
+                  </TableCell>
 
-            <TableCell>{job.service_type || "-"}</TableCell>
+                  <TableCell>{job.service_type || "-"}</TableCell>
 
-            <TableCell className="text-center">{job.pax || 0}</TableCell>
-            <TableCell className="text-center">{job.noOfGuide || 0}</TableCell>
+                  <TableCell className="text-center">{job.pax || 0}</TableCell>
+                  <TableCell className="text-center">{job.noOfGuide || 0}</TableCell>
 
-            <TableCell>{job.guideLanguage || "-"}</TableCell>
+                  <TableCell>{job.guideLanguage || "-"}</TableCell>
 
-            <TableCell className="text-center">
-              ₹ {job.vehiclePrice || 0}
-            </TableCell>
+                  <TableCell className="text-center">
+                    ₹ {job.vehiclePrice || 0}
+                  </TableCell>
 
-            <TableCell className="text-center">
-              ₹ {job.guidePrice || 0}
-            </TableCell>
+                  <TableCell className="text-center">
+                    ₹ {job.guidePrice || 0}
+                  </TableCell>
 
-            {/* Driver Button */}
-            <TableCell className="text-center">
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => handleOpenDriverModal(job.id)}
-                className="bg-blue-200 dark:bg-blue-200 rounded-full"
-              >
-                👨‍✈️
-              </Button>
-            </TableCell>
+                  {/* Driver Button */}
+                  <TableCell className="text-center">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => handleOpenDriverModal(job.id)}
+                      className="bg-blue-200 dark:bg-blue-200 rounded-full"
+                    >
+                      👨‍✈️
+                    </Button>
+                  </TableCell>
 
-            {/* Guide Button */}
-            <TableCell className="text-center">
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => handleOpenGuideModal(job.id)}
-                className="bg-green-200 dark:bg-green-200 rounded-full"
-              >
-                🧑‍🏫
-              </Button>
-            </TableCell>
+                  {/* Guide Button */}
+                  <TableCell className="text-center">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => handleOpenGuideModal(job.id)}
+                      className="bg-green-200 dark:bg-green-200 rounded-full"
+                    >
+                      🧑‍🏫
+                    </Button>
+                  </TableCell>
 
-            {/* Driver Status */}
-            <TableCell>
-              <span
-                className={`text-xs font-medium ${
-                  job.driverName
-                    ? "text-green-600"
-                    : "text-red-500"
-                }`}
-              >
-                {job.driverName ? "Driver Assigned" : "Driver Pending"}
-              </span>
-            </TableCell>
+                  {/* Driver Status */}
+                  <TableCell>
+                    <span
+                      className={`text-xs font-medium ${
+                        job.driverName
+                          ? "text-green-600"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {job.driverName ? "Driver Assigned" : "Driver Pending"}
+                    </span>
+                  </TableCell>
 
-            {/* Guide Status */}
-            <TableCell>
-              <span
-                className={`text-xs font-medium ${
-                  job.guideName
-                    ? "text-green-600"
-                    : "text-red-500"
-                }`}
-              >
-                {job.guideName ? "Guide Assigned" : "Guide Pending"}
-              </span>
-            </TableCell>
+                  {/* Guide Status */}
+                  <TableCell>
+                    <span
+                      className={`text-xs font-medium ${
+                        job.guideName
+                          ? "text-green-600"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {job.guideName ? "Guide Assigned" : "Guide Pending"}
+                    </span>
+                  </TableCell>
 
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
-  </CardContent>
-</Card>
+        </CardContent>
+      </Card>
 
 
 {isDriverModalOpen && (

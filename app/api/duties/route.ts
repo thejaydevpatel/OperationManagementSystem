@@ -71,6 +71,7 @@ const whereClause =
     j."client",
     j."agent",
     j."address",
+    j."job_status_id" AS "jobStatus",
     j."guide_language_required",
     j."service_type",
     j."notes" AS "remark",
@@ -79,13 +80,22 @@ const whereClause =
     vt."name" AS "vehicleType",
 
     d."name" AS "driverName",
+    d."id" AS "driverId",
+    d."phone" AS "driverPhone",
 
-    gl.guide_name AS "guideName",
+COALESCE(gl.guide_ids, '') AS "guide_ids",
+COALESCE(gl.guide_name, '') AS "guideName",
+COALESCE(gl.guide_phone, '') AS "guide_phone",
+COALESCE(gl.language_name, '') AS "language_name",
    lm.name AS "guideLanguage",
    gl.language_name AS "assignedLanguage" ,
     COALESCE(ga.guide_count, 0) AS "noOfGuide",
 
     v."registration_number" AS "registrationNumber",
+    v.id AS "vehicleId",
+
+    sup.name AS "supplierName",
+sup.id AS "supplierId",
 
     da."short_id" AS "dutySlipNo",
 
@@ -93,6 +103,7 @@ const whereClause =
     ld."name" AS "dropLocation",
 
     s."name" AS "status",
+    s."name" AS "jobStatusName",
  
 COALESCE(da_cost.vehicle_price, 0) AS "vehiclePrice",
 COALESCE(ga_cost.guide_price, 0) AS "guidePrice"
@@ -109,7 +120,10 @@ COALESCE(ga_cost.guide_price, 0) AS "guidePrice"
 
   LEFT JOIN "vehicles_lookup_vehicles_table" v
     ON v."id" = da."vehicle_id"
-
+  
+  LEFT JOIN supplier_master_lookup_supplier_master_table sup
+    ON sup.id = v.supplier_id
+  
   LEFT JOIN "vehicle_types_lookup_vehicle_types_table" vt
     ON vt."id" = j."vehicle_type_required"
 
@@ -155,14 +169,23 @@ LEFT JOIN (
 LEFT JOIN (
     SELECT 
         g1.job_id,
-        STRING_AGG(tg.name, ', ') AS guide_name,  -- combine all guides
-        STRING_AGG(l.name, ', ') AS language_name
+
+        STRING_AGG(COALESCE(tg.id::text, ''), ',') AS guide_ids,
+        STRING_AGG(COALESCE(tg.name, ''), ', ') AS guide_name,
+        STRING_AGG(COALESCE(tg.phone, ''), ', ') AS guide_phone,
+        STRING_AGG(COALESCE(l.name, ''), ', ') AS language_name
+
     FROM guide_allocation_lookup_guide_allocation_table g1
+
     LEFT JOIN tour_guides_lookup_tour_guides_table tg 
         ON tg.id = g1.guide_id
+
     LEFT JOIN language_master_lookup_language_master_table l
         ON l.id = tg.language_id
+
     WHERE g1.is_deleted = false
+      AND tg.id IS NOT NULL    
+
     GROUP BY g1.job_id
 ) gl ON gl.job_id = j.id
   ${whereClause}

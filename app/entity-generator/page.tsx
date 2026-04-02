@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import Link from "next/link";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -25,6 +26,8 @@ import {
   AlertDialogTitle,
   // AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { LayoutDashboard } from "lucide-react"
+
 
 type FieldType = {
   name: string;
@@ -321,9 +324,13 @@ const handleSubmit = async () => {
 
   return (
   
-    <div className="sm:max-w-6xl mx-auto">
 
-      <Card className="mt-14">
+    <div className="sm:max-w-8xl ">
+
+
+<Label className="felx justify-center font-bold mt-14  text-2xl">Entity Generator </Label>
+
+      <Card className="mt-14  mx-10">
         <CardHeader>
           <CardTitle className="text-2xl">Create Entity</CardTitle>
         </CardHeader>
@@ -404,7 +411,7 @@ const handleSubmit = async () => {
       </Card>
 
 
-       <div className="mt-14 sm:max-w-6xl mx-auto">
+       <div className="mt-14 sm:max-w-8xl mx-10">
         <Table className="mt-5">
           <TableHeader>
             <TableRow className=" mt-20 bg-muted border-b border-border">

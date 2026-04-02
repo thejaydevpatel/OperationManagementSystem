@@ -52,8 +52,8 @@ const Page = () => {
 
  
       <Card>
-        <CardHeader>
-          <CardTitle>Edit Driver Allocation Table</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Edit Driver Allocation </CardTitle>
            
         </CardHeader>
 

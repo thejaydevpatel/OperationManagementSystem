@@ -7,9 +7,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandInput, CommandItem, CommandList, CommandEmpty } from "@/components/ui/command";
 import Combobox from "@/components/ui/combobox";
 import { useRef } from "react";
+import { Label } from "@/components/ui/label";
+import * as XLSX from "xlsx";
+import { ChevronsUpDown, Check,RefreshCw  } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-import { ChevronsUpDown, Check } from "lucide-react";
-  
 import {
   FileDown,
   FileSpreadsheet,
@@ -163,24 +172,150 @@ const handleRefresh = async () => {
   setLoading(false);
 };
  
+const downloadCSV = (data: any[]) => {
+  if (!data || data.length === 0) return;
+
+  const headers = Object.keys(data[0]);
+
+  const csvRows = [
+    headers.join(","), // header row
+    ...data.map(row =>
+      headers.map(field => `"${row[field] ?? ""}"`).join(",")
+    )
+  ];
+
+  const csvContent = csvRows.join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "report.csv";
+  a.click();
+
+  window.URL.revokeObjectURL(url);
+};
+
+const downloadExcel = (data: any[]) => {
+  if (!data || data.length === 0) return;
+
+  // Optional: clean / format data before export
+  const formatted = data.map((row, i) => ({
+    "Sr No": i + 1,
+    Date: row.date,
+    "Booking ID": row.bookingId,
+    Client: row.client,
+    Driver: row.driverName,
+    Vehicle: row.vehicle,
+    Pickup: row.pickupLocation,
+    Drop: row.dropLocation,
+    Status: row.status,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(formatted);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Duty Report");
+
+  XLSX.writeFile(workbook, "Duty_Report.xlsx");
+};
+
+const downloadPDF = (data: any[]) => {
+  if (!data || data.length === 0) return;
+
+  const doc = new jsPDF();
+
+  const tableData = data.map((row, i) => ([
+    i + 1,
+    row.date,
+    row.bookingId,
+    row.client,
+    row.driverName || "N/A",
+    row.vehicleType,
+    row.pickupLocation,
+    row.dropLocation,
+  ]));
+
+  autoTable(doc, {
+    head: [[
+      "Sr No",
+      "Date",
+      "Booking ID",
+      "Client",
+      "Driver",
+      "Vehicle",
+      "Pickup",
+      "Drop"
+    ]],
+    body: tableData,
+  });
+
+  doc.save("Duty_Report.pdf");
+};
+
+const handlePrintRow = (row: any) => {
+  const printWindow = window.open("", "_blank");
+
+  if (!printWindow) return;
+
+  const content = `
+    <html>
+      <head>
+        <title>Print Duty</title>
+        <style>
+          body { font-family: Arial; padding: 20px; }
+          h2 { text-align: center; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          td, th { border: 1px solid #000; padding: 8px; text-align: left; }
+        </style>
+      </head>
+      <body>
+        <h2>Duty Details</h2>
+        <table>    
+          <tr><th>Booking ID</th><td>${row.bookingId}</td></tr>
+          <tr><th>Pax</th><td>${row.pax || "-"}</td></tr>
+          <tr><th>Date</th><td>${row.date}</td></tr>
+          <tr><th>agent</th><td>${row.agent || "-"}</td></tr>
+          <tr><th>Client</th><td>${row.client || "-"}</td></tr>
+          <tr><th>Activity</th><td>${row.service_type || "-"}</td></tr>
+          <tr><th>remark</th><td>${row.remark || "-"}</td></tr>
+          <tr><th>Address Details</th><td>${row.address || "-"}</td></tr>
+          <tr><th>Driver</th><td>${row.driverName || "Not Assigned"}</td></tr>
+          <tr><th>Guide Name</th><td>${row.guideName || "Not Assigned"}</td></tr>
+          <tr><th>Vehicle</th><td>${row.vehicleType || "-"}</td></tr>
+          <tr><th>Pickup</th><td>${row.pickupLocation || "-"}</td></tr>
+          <tr><th>Drop</th><td>${row.dropLocation || "-"}</td></tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  printWindow.document.write(content);
+  printWindow.document.close();
+
+  printWindow.focus();
+  printWindow.print();
+
+  printWindow.close();
+};
+
 
   return (
 <div className="p-6 min-h-screen bg-background text-foreground">
 
       {/* HEADER */}
-        <h1 className="text-2xl font-bold text-blue-700">
-          Driver Operation
-        </h1>
+
 
 <div className="flex items-center gap-3 my-5">
-
+{/* 
   <Link href="/Reports/duty-chart">
     <Button variant="outline" className="flex items-center gap-2">
       <ClipboardList size={16} />
       Operation
     </Button>
-  </Link>
-
+  </Link> */}
+<Label>Back to Dashboard : </Label>
   <Link href="/dashboard">
     <Button variant="outline" className="flex items-center gap-2">
       <LayoutDashboard size={16} />
@@ -189,6 +324,10 @@ const handleRefresh = async () => {
   </Link>
 
 </div>
+
+        <Label className="flex justify-center mb-5 text-2xl font-bold text-blue-700">
+          Operations
+        </Label>
  
       {/* FILTER CARD */}
  {/* FILTER CARD */}
@@ -351,25 +490,78 @@ const handleRefresh = async () => {
     <div className="flex flex-wrap items-center justify-between gap-2 mt-5 w-full">
     <div className="flex flex-wrap gap-2 mt-5">
       <Button onClick={handleSearch}>Search</Button>
-      <Button onClick={handleRefresh} >Refresh</Button>
       <Button onClick={() => window.print()}>Print</Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              className="p-2 cursor-pointer"
+              onClick={handleRefresh}
+            >
+              <RefreshCw className="size-4 mr-2 "/>
+            </Button>
+          </TooltipTrigger>
+
+          <TooltipContent>
+            Refresh
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      {/* <Button onClick={handleRefresh} variant="ghost" className="p-2"> <RefreshCw className="size-4 mr-2 "/></Button> */}
     </div>
 <div className="flex flex-wrap gap-2 mt-5 justify-end">
-  <Button variant="ghost" className="p-2">
+  {/* <Button variant="ghost" className="p-2"
+   onClick={() => downloadCSV(data)}
+   >
     <FileDown className="text-blue-600 size-xl" />
-  </Button>
+  </Button> */}
 
-  <Button variant="ghost" className="p-2">
-    <FileSpreadsheet className="text-green-600 size-xl" />
-  </Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant="ghost"
+        className="p-2 cursor-pointer"
+        onClick={() => downloadPDF(data)}
+      >
+        <FileDown className="text-red-600 size-xl" />
+      </Button>
+    </TooltipTrigger>
+
+    <TooltipContent>
+      Download as PDF
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant="ghost"
+        className="p-2 cursor-pointer"
+        onClick={() => downloadExcel(data)}
+      >
+        <FileSpreadsheet className="text-green-600 size-xl" />
+      </Button>
+    </TooltipTrigger>
+
+    <TooltipContent>
+      Download as EXCEL
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+
+ 
 
   <Button variant="ghost" className="p-2">
     <Mail className="text-orange-500 size-xl" />
   </Button>
 
-  <Button variant="ghost" className="p-2">
+  {/* <Button variant="ghost" className="p-2">
     <Printer className="text-purple-600 size-xl" />
-  </Button>
+  </Button> */}
 </div>
     </div>
 
@@ -393,14 +585,14 @@ const handleRefresh = async () => {
         {/* HEADER */}
         <TableHeader>
           <TableRow className=" mt-20 bg-muted border-b border-border">
-            <TableHead>Sr No.</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>File Details</TableHead>
-            <TableHead>Service Details</TableHead>
-            <TableHead>Vehicle Driver Details</TableHead>
-            <TableHead>Pickup / Reporting</TableHead>
-            <TableHead>Drop</TableHead>
-            <TableHead>Print</TableHead>
+            <TableHead className="text-left rtl:text-right">Sr No.</TableHead>
+            <TableHead className="text-left rtl:text-right">Date</TableHead>
+            <TableHead className="text-left rtl:text-right">File Details</TableHead>
+            <TableHead className="text-left rtl:text-right">Service Details</TableHead>
+            <TableHead className="text-left rtl:text-right">Vehicle Driver Details</TableHead>
+            <TableHead className="text-left rtl:text-right">Pickup / Reporting</TableHead>
+            <TableHead className="text-left rtl:text-right">Drop</TableHead>
+            <TableHead className="text-left rtl:text-right">Print</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -417,7 +609,7 @@ const handleRefresh = async () => {
                 <TableCell>{row.date || "-"}</TableCell>
 
                 {/* 3 */}
-                <TableCell className="text-left">
+                <TableCell>
                   <div><b>Booking:</b> {row.bookingId || "-"}</div>
                   <div><b>PAX:</b> {row.pax || "-"}</div>
                   <div><b>Client Name:</b> {row.client || "-"}</div>
@@ -428,7 +620,7 @@ const handleRefresh = async () => {
                 </TableCell>
 
                 {/* 4 */}
-                <TableCell className="text-left">
+                <TableCell>
                   <div><b>Date:</b> {row.date || "-"}</div>
                   <div><b>Activity:</b> {row.service_type || "-"}</div>
                   <div><b>VH Type:</b> {row.vehicleType || "-"}</div>
@@ -436,7 +628,7 @@ const handleRefresh = async () => {
                 </TableCell>
 
                 {/* 5 */}
-                <TableCell className="text-left">
+                <TableCell>
                   <div><b>Duty Slip No.:</b> {row.dutySlipNo || "-"}</div>
                   <div><b>Registration Number:</b> {row.registrationNumber || "-"}</div>
                   <div><b>Driver Name:</b> {row.driverName || "Not Assigned"}</div>
@@ -472,7 +664,7 @@ const handleRefresh = async () => {
                 </TableCell>
 
                 {/* 6 */}
-                <TableCell className="text-left">
+                <TableCell>
                   <div><b>Location:</b> {row.pickupLocation || "-"}</div>
                   <div><b>Report:</b> {row.reportingTime || "-"}</div>
                   <div><b>Pickup:</b> {row.pickupTime || "-"}</div>
@@ -484,10 +676,24 @@ const handleRefresh = async () => {
                 </TableCell>
 
                 {/* 8 */}
-                <TableCell>
-                    <Button variant="ghost" className="p-2">
-                      <Printer className="text-red-600 size-xl" />
-                    </Button>
+                <TableCell> 
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="p-2 cursor-pointer"
+                            onClick={() => handlePrintRow(row)}
+                          >
+                            <Printer className="text-red-600 size-xl" />
+                          </Button>
+                        </TooltipTrigger>
+
+                        <TooltipContent>
+                          Download Booking PDF
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                 </TableCell>
 
               </TableRow>
@@ -507,5 +713,8 @@ const handleRefresh = async () => {
 </Card>
 </div>
     </div>
+
+    
   );
+  
 }

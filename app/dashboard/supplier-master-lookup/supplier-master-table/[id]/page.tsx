@@ -52,8 +52,8 @@ const Page = () => {
 
  
       <Card>
-        <CardHeader>
-          <CardTitle>Edit Supplier Master Table</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Edit Supplier</CardTitle>
            
         </CardHeader>
 

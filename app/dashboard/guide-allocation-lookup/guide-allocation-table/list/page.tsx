@@ -52,8 +52,8 @@ const Page = () => {
 
  
       <Card>
-        <CardHeader>
-          <CardTitle>Guide Allocation Table List</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Guide Allocations</CardTitle>
            
         </CardHeader>
 

@@ -52,8 +52,8 @@ const Page = () => {
 
  
       <Card>
-        <CardHeader>
-          <CardTitle>Vehicles Table List</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Vehicles </CardTitle>
            
         </CardHeader>
 

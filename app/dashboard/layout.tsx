@@ -49,6 +49,7 @@ import {
   ChevronRight,
   ChevronDown,
   List,
+  Cpu ,
 } from "lucide-react"
 import {
   Collapsible,
@@ -101,17 +102,24 @@ const menuItems: MenuItem[] = [
     href: "/dashboard",
   },
   {
-    key: "Reports",
-    label: "Reports",
+    key: "Operations",
+    label: "Operations",
     icon: List,
     href: "/Reports/duty-chart",
   },
-  // {
-  //   key: "users",
-  //   label: "Users",
-  //   icon: Users,
-  //   href: "#",
-  // },
+  {
+    key: "reports",
+    label: "Reports",
+    icon: Cpu ,
+    href: "/Reports/reports",
+  },
+  {
+    key: "users",
+    label: "Admin Users",
+    icon: Users,
+    href: "/dashboard/admin-users-lookup/admin-users-table/list",
+  },
+
 
   // MASTER
   {
@@ -135,6 +143,8 @@ const menuItems: MenuItem[] = [
     label: "Resources",
     icon: Users,
     children: [
+      { label: "Users", href: "/dashboard/users-lookup/users-table/list", icon: Users },
+      { label: "Agents", href: "/dashboard/agents-lookup/agents-table/list", icon: Users },
       { label: "Drivers", href: "/dashboard/drivers-lookup/drivers-table/list", icon: UserCheck },
       { label: "Driver Duty", href: "/dashboard/driver-duty-lookup/driver-duty-table/list", icon: Clock },
       { label: "Driver Availability", href: "/dashboard/driver-availability-lookup/driver-availability-table/list", icon: CalendarCheck },
