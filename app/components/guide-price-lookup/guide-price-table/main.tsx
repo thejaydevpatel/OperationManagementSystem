@@ -70,7 +70,7 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
   noValidate
 >
               {/* ✅ Back Button Section (replaced Stack + Button + sx) */}
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-end mb-c4">
                 <Link
                   href={`/dashboard/guide-price-lookup/guide-price-table/list`}
                 >

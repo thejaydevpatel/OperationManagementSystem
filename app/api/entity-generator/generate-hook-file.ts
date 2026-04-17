@@ -292,18 +292,35 @@ const router = useRouter();
 
 const dropdownEndpoints: Record<string, string | null> = {
   ${dropdownFields
-    .map((f) => {
-      if (!f.refTable) return `${f.name}: null,`;
+.map((f) => {
+  if (!f.refTable) return `${f.name}: null,`;
 
-      const [modulePart, tablePart] = f.refTable.split("_lookup_");
+  let modulePart = "";
+  let tablePart = "";
 
-      const firstPart = `${modulePart.replace(/_/g, "-")}-lookup`;
-      const secondPart = tablePart.replace(/_/g, "-");
+  if (f.refTable.includes("_lookup_")) {
+    const parts = f.refTable.split("_lookup_");
+    modulePart = parts[0];
+    tablePart = parts[1];
+  } else if (f.refTable.startsWith("lookup_")) {
+    modulePart = "lookup";
+    tablePart = f.refTable.replace("lookup_", "");
+  } else {
+    const parts = f.refTable.split("_");
+    modulePart = parts[0];
+    tablePart = parts.slice(1).join("_") || parts[0];
+  }
 
-      const endpoint = `\`${"${process.env.NEXT_PUBLIC_REACT_APP_API_URL}"}/${firstPart}/${secondPart}?pageSize=9999\``;
+  const firstPart = modulePart.includes("lookup")
+    ? modulePart.replace(/_/g, "-")
+    : `${modulePart.replace(/_/g, "-")}-lookup`;
 
-      return `${f.name}: ${endpoint},`;
-    })
+  const secondPart = tablePart.replace(/_/g, "-");
+
+  const endpoint = `\`${"${process.env.NEXT_PUBLIC_REACT_APP_API_URL}"}/${firstPart}/${secondPart}?pageSize=9999\``;
+
+  return `${f.name}: ${endpoint},`;
+})
     .join("\n  ")}
 };
 

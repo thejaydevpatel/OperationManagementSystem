@@ -326,348 +326,348 @@ const handleSubmit = async () => {
   
 
     <div className="sm:max-w-8xl ">
+      <div className="mx-10">
 
+        <Label className="felx justify-center font-bold mt-14  text-2xl">Entity Generator </Label>
 
-<Label className="felx justify-center font-bold mt-14  text-2xl">Entity Generator </Label>
+        <Card className="mt-14  mx-10">
+          <CardHeader>
+            <CardTitle className="text-2xl">Create Entity</CardTitle>
+          </CardHeader>
 
-      <Card className="mt-14  mx-10">
-        <CardHeader>
-          <CardTitle className="text-2xl">Create Entity</CardTitle>
-        </CardHeader>
+          <CardContent>
+            <div className="" >
 
-        <CardContent>
-          <div className="" >
+              <div className="flex flex-wrap gap-4">
 
-            <div className="flex flex-wrap gap-4">
+                <Input
+                  placeholder="Database Name"
+                  value={dbName}
+                  onChange={(e) => setDbName(e.target.value)}
+                  className="w-48"
+                />
 
-              <Input
-                placeholder="Database Name"
-                value={dbName}
-                onChange={(e) => setDbName(e.target.value)}
-                className="w-48"
-              />
+                <Input
+                  placeholder="Module Name"
+                  value={moduleName}
+                  onChange={(e) => setModuleName(e.target.value)}
+                  className="w-48"
+                />
 
-              <Input
-                placeholder="Module Name"
-                value={moduleName}
-                onChange={(e) => setModuleName(e.target.value)}
-                className="w-48"
-              />
+                <Input
+                  placeholder="Table Name"
+                  value={tableName}
+                  onChange={(e) => setTableName(e.target.value)}
+                  className="w-48"
+                />
+                <br />
+                
+              </div>
+                <div className="flex items-center gap-8 mt-4 bg-muted/40 p-3">
+                <div className="flex items-center p-3 gap-3">
+                  {/* Schema Only */}
+                    <Checkbox
+                      checked={isSchemaOnly}
+                      onCheckedChange={(checked) =>
+                        setIsSchemaOnly(checked as boolean)
+                      }
+                    />
+                    <Label>Schema Only</Label>
+                </div>
 
-              <Input
-                placeholder="Table Name"
-                value={tableName}
-                onChange={(e) => setTableName(e.target.value)}
-                className="w-48"
-              />
-              <br />
-              
-            </div>
-              <div className="flex items-center gap-8 mt-4 bg-muted/40 p-3">
-              <div className="flex items-center p-3 gap-3">
-                {/* Schema Only */}
+                  {/* Is Child Page */}
+                <div className="flex items-center p-3 gap-3">
                   <Checkbox
-                    checked={isSchemaOnly}
+                    checked={isChildPage}
                     onCheckedChange={(checked) =>
-                      setIsSchemaOnly(checked as boolean)
+                      setIsChildPage(checked as boolean)
                     }
                   />
-                  <Label>Schema Only</Label>
-              </div>
-
-                {/* Is Child Page */}
-              <div className="flex items-center p-3 gap-3">
-                <Checkbox
-                  checked={isChildPage}
-                  onCheckedChange={(checked) =>
-                    setIsChildPage(checked as boolean)
-                  }
-                />
-                <Label>Is Child Page</Label>
-              </div>
-              <div className="flex items-center p-3 gap-3" >
-                {isChildPage && (
-                  <>
-                    <Input 
-                      placeholder="Folder Name (example: tours, dummy-v1)"
-                      value={mainTable}
-                      onChange={(e) => setMainTable(e.target.value)}
-                      className="w-64"
-                    />
-
-                    <Input
-                      placeholder="Main id column (camelCase)"
-                      value={mainId}
-                      onChange={(e) => setMainId(e.target.value)}
-                      className="w-56"
+                  <Label>Is Child Page</Label>
+                </div>
+                <div className="flex items-center p-3 gap-3" >
+                  {isChildPage && (
+                    <>
+                      <Input 
+                        placeholder="Folder Name (example: tours, dummy-v1)"
+                        value={mainTable}
+                        onChange={(e) => setMainTable(e.target.value)}
+                        className="w-64"
                       />
-                  </>
-                )}
-              </div>
-            </div>
 
-          </div>
-        </CardContent>
-      </Card>
-
-
-       <div className="mt-14 sm:max-w-8xl mx-10">
-        <Table className="mt-5">
-          <TableHeader>
-            <TableRow className=" mt-20 bg-muted border-b border-border">
-              <TableHead>Name</TableHead>
-              <TableHead>Specific Control</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-center">Size</TableHead>
-              <TableHead>Nullable</TableHead>
-              <TableHead>Primary Key</TableHead>
-              <TableHead>Identity</TableHead>
-              <TableHead>Default Value</TableHead>
-              <TableHead>Constraints</TableHead>
-              <TableHead>FK?</TableHead>
-              <TableHead>Ref Table</TableHead>
-              <TableHead>Ref Column</TableHead>
-              <TableHead>Del Cascade</TableHead>
-              <TableHead>Upd Cascade</TableHead>
-              <TableHead>Layout?</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {fields.map((f, idx) => (
-            <TableRow key={idx} >
-              <TableCell>
-                <Input
-                    //  className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
-                     className="w-40"                    
-                      value={f.name}
-                      onChange={(e) => updateField(idx, "name", e.target.value)}
-                      disabled={f.system}
-                />
-              </TableCell>
-              <TableCell>
-                <select
-                      value={f.specificControl}
-                      onChange={(e) =>
-                        updateField(idx, "specificControl", e.target.value)
-                      }
-                      disabled={f.system}
-                    >
-                      <option value="Default">Default</option>
-                      <option value="DropDown">Auto Complete DropDown</option>
-                      <option value="NormalDropDown">Normal DropDown</option>
-                      <option value="CustomDate">Custom Date</option>
-                      <option value="Radio">Radio</option>
-                      <option value="MultiCheckbox">MultiCheckbox</option>
-                      <option value="RichTextPicker">RichText Picker</option>
-                      <option value="File">File</option>
-                    </select>
-              </TableCell>
-              <TableCell>
-                <select
-                      value={f.type}
-                      onChange={(e) => updateField(idx, "type", e.target.value)}
-                      disabled={f.system}
-                    >
-                      <option value="VARCHAR">VARCHAR</option>
-                      <option value="INTEGER">INTEGER</option>
-                      <option value="DECIMAL">DECIMAL</option>
-                      <option value="BIGINT">BIGINT</option>
-                      <option value="BOOLEAN">BOOLEAN</option>
-                      <option value="TEXT">TEXT</option>
-                      <option value="UUID">UUID</option>
-                      <option value="TIMESTAMP WITH TIME ZONE">
-                        TIMESTAMP WITH TIME ZONE
-                      </option>
-                      <option value="TIME">TIME</option>
-                      <option value="POLYGON">POLYGON</option>
-                      {/* Bit Strings */}
-                      <option value="BIT">BIT</option>
-                      <option value="BIT VARYING">BIT VARYING</option>
-
-                      {/* Binary Data */}
-                      <option value="BYTEA">BYTEA</option>
-                    </select>
-              </TableCell>
-              <TableCell>
-                {f.type === "VARCHAR" && (
                       <Input
-                      className="w-30"
-                        //  className="bg-white border w-20 text-center border-primary/50"
-                        // className="bg-white dark:bg-gray-800 border-primary/40 w-20 focus-visible:ring-primary shadow-sm"
-                        value={f.size || ""}
-                        onChange={(e) => updateField(idx, "size", e.target.value)}
+                        placeholder="Main id column (camelCase)"
+                        value={mainId}
+                        onChange={(e) => setMainId(e.target.value)}
+                        className="w-56"
+                        />
+                    </>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </CardContent>
+        </Card>
+
+
+        <div className="mt-14 sm:max-w-8xl mx-10">
+          <Table className="mt-5">
+            <TableHeader>
+              <TableRow className=" mt-20 bg-muted border-b border-border">
+                <TableHead>Name</TableHead>
+                <TableHead>Specific Control</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-center">Size</TableHead>
+                <TableHead>Nullable</TableHead>
+                <TableHead>Primary Key</TableHead>
+                <TableHead>Identity</TableHead>
+                <TableHead>Default Value</TableHead>
+                <TableHead>Constraints</TableHead>
+                <TableHead>FK?</TableHead>
+                <TableHead>Ref Table</TableHead>
+                <TableHead>Ref Column</TableHead>
+                <TableHead>Del Cascade</TableHead>
+                <TableHead>Upd Cascade</TableHead>
+                <TableHead>Layout?</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {fields.map((f, idx) => (
+              <TableRow key={idx} >
+                <TableCell>
+                  <Input
+                      //  className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
+                      className="w-40"                    
+                        value={f.name}
+                        onChange={(e) => updateField(idx, "name", e.target.value)}
                         disabled={f.system}
-                        // style={{ width: "60px" }}
-                      />
-                    )}
-              </TableCell>
-              <TableCell className="mx-auto text-center w-48">
-                <input 
-                      type="checkbox"
-                      checked={f.nullable}
-                      onChange={(e) =>
-                        updateField(idx, "nullable", e.target.checked)
-                      }
-                      disabled={f.system}
-                    />
-              </TableCell>
-              <TableCell className="mx-auto text-center w-48">
-                <input
-                      type="radio"
-                      checked={f.primaryKey}
-                      name="primaryKey"
-                      onChange={() => {
-                        const updated = fields.map((ff, i) => ({
-                          ...ff,
-                          primaryKey: i === idx,
-                        }));
-                        setFields(updated);
-                      }}
-                      disabled={f.system}
-                    />
-              </TableCell>
-              <TableCell className="mx-auto text-center w-48">
-                <input
-                      type="checkbox"
-                      checked={f.identity}
-                      onChange={(e) =>
-                        updateField(idx, "identity", e.target.checked)
-                      }
-                      disabled={f.system}
-                    />
-              </TableCell>
-              <TableCell>
-                <Input        
-                      className="w-40"
-                      // className="bg-white dark:bg-gray-800  border-primary/40 focus-visible:ring-primary shadow-sm"
-                      value={f.defaultValue}
-                      onChange={(e) =>
-                        updateField(idx, "defaultValue", e.target.value)
-                      }
-                      disabled={f.system}
-                    />
-              </TableCell>
-              <TableCell>
-                <Input
-                      className="w-40"
-                      value={f.constraints}
-                      placeholder="e.g., UNIQUE, CHECK (age > 0)"
-                      onChange={(e) =>
-                        updateField(idx, "constraints", e.target.value)
-                      }
-                      disabled={f.system}
-                    />
-              </TableCell>
-              <TableCell className="mx-auto text-center w-48">
-                <input
-                      type="checkbox"
-                      checked={!!f.foreignKey}
-                      onChange={(e) =>
-                        updateField(idx, "foreignKey", e.target.checked)
-                      }
-                      disabled={f.system}
-                    />
-              </TableCell>
-              <TableCell>
-                {f.foreignKey && (
-                      <Input 
-                      className="w-40"
-                      // className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
-                        value={f.refTable || ""}
+                  />
+                </TableCell>
+                <TableCell>
+                  <select
+                        value={f.specificControl}
                         onChange={(e) =>
-                          updateField(idx, "refTable", e.target.value)
+                          updateField(idx, "specificControl", e.target.value)
                         }
-                      />
-                    )}
-              </TableCell>
-              <TableCell>
-                {f.foreignKey && (
-                      <Input 
-                      className="w-40"
-                      // className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
-                        value={f.refColumn || ""}
-                        onChange={(e) =>
-                          updateField(idx, "refColumn", e.target.value)
-                        }
-                      />
-                    )}
-              </TableCell>
-              <TableCell className="mx-auto text-center w-48">
-                {f.foreignKey && (
-                      <input
+                        disabled={f.system}
+                      >
+                        <option value="Default">Default</option>
+                        <option value="DropDown">Auto Complete DropDown</option>
+                        <option value="NormalDropDown">Normal DropDown</option>
+                        <option value="CustomDate">Custom Date</option>
+                        <option value="Radio">Radio</option>
+                        <option value="MultiCheckbox">MultiCheckbox</option>
+                        <option value="RichTextPicker">RichText Picker</option>
+                        <option value="File">File</option>
+                      </select>
+                </TableCell>
+                <TableCell>
+                  <select
+                        value={f.type}
+                        onChange={(e) => updateField(idx, "type", e.target.value)}
+                        disabled={f.system}
+                      >
+                        <option value="VARCHAR">VARCHAR</option>
+                        <option value="INTEGER">INTEGER</option>
+                        <option value="DECIMAL">DECIMAL</option>
+                        <option value="BIGINT">BIGINT</option>
+                        <option value="BOOLEAN">BOOLEAN</option>
+                        <option value="TEXT">TEXT</option>
+                        <option value="UUID">UUID</option>
+                        <option value="TIMESTAMP WITH TIME ZONE">
+                          TIMESTAMP WITH TIME ZONE
+                        </option>
+                        <option value="TIME">TIME</option>
+                        <option value="POLYGON">POLYGON</option>
+                        {/* Bit Strings */}
+                        <option value="BIT">BIT</option>
+                        <option value="BIT VARYING">BIT VARYING</option>
+
+                        {/* Binary Data */}
+                        <option value="BYTEA">BYTEA</option>
+                      </select>
+                </TableCell>
+                <TableCell>
+                  {f.type === "VARCHAR" && (
+                        <Input
+                        className="w-30"
+                          //  className="bg-white border w-20 text-center border-primary/50"
+                          // className="bg-white dark:bg-gray-800 border-primary/40 w-20 focus-visible:ring-primary shadow-sm"
+                          value={f.size || ""}
+                          onChange={(e) => updateField(idx, "size", e.target.value)}
+                          disabled={f.system}
+                          // style={{ width: "60px" }}
+                        />
+                      )}
+                </TableCell>
+                <TableCell className="mx-auto text-center w-48">
+                  <input 
                         type="checkbox"
-                        checked={!!f.onDeleteCascade}
+                        checked={f.nullable}
                         onChange={(e) =>
-                          updateField(idx, "onDeleteCascade", e.target.checked)
+                          updateField(idx, "nullable", e.target.checked)
                         }
+                        disabled={f.system}
                       />
-                    )}
-              </TableCell>
-              <TableCell className="mx-auto text-center w-48">
-                {f.foreignKey && (
-                      <input
+                </TableCell>
+                <TableCell className="mx-auto text-center w-48">
+                  <input
+                        type="radio"
+                        checked={f.primaryKey}
+                        name="primaryKey"
+                        onChange={() => {
+                          const updated = fields.map((ff, i) => ({
+                            ...ff,
+                            primaryKey: i === idx,
+                          }));
+                          setFields(updated);
+                        }}
+                        disabled={f.system}
+                      />
+                </TableCell>
+                <TableCell className="mx-auto text-center w-48">
+                  <input
                         type="checkbox"
-                        checked={!!f.onUpdateCascade}
+                        checked={f.identity}
                         onChange={(e) =>
-                          updateField(idx, "onUpdateCascade", e.target.checked)
+                          updateField(idx, "identity", e.target.checked)
+                        }
+                        disabled={f.system}
+                      />
+                </TableCell>
+                <TableCell>
+                  <Input        
+                        className="w-40"
+                        // className="bg-white dark:bg-gray-800  border-primary/40 focus-visible:ring-primary shadow-sm"
+                        value={f.defaultValue}
+                        onChange={(e) =>
+                          updateField(idx, "defaultValue", e.target.value)
+                        }
+                        disabled={f.system}
+                      />
+                </TableCell>
+                <TableCell>
+                  <Input
+                        className="w-40"
+                        value={f.constraints}
+                        placeholder="e.g., UNIQUE, CHECK (age > 0)"
+                        onChange={(e) =>
+                          updateField(idx, "constraints", e.target.value)
+                        }
+                        disabled={f.system}
+                      />
+                </TableCell>
+                <TableCell className="mx-auto text-center w-48">
+                  <input
+                        type="checkbox"
+                        checked={!!f.foreignKey}
+                        onChange={(e) =>
+                          updateField(idx, "foreignKey", e.target.checked)
+                        }
+                        disabled={f.system}
+                      />
+                </TableCell>
+                <TableCell>
+                  {f.foreignKey && (
+                        <Input 
+                        className="w-40"
+                        // className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
+                          value={f.refTable || ""}
+                          onChange={(e) =>
+                            updateField(idx, "refTable", e.target.value)
+                          }
+                        />
+                      )}
+                </TableCell>
+                <TableCell>
+                  {f.foreignKey && (
+                        <Input 
+                        className="w-40"
+                        // className="bg-white dark:bg-gray-800 border-primary/40 focus-visible:ring-primary shadow-sm"
+                          value={f.refColumn || ""}
+                          onChange={(e) =>
+                            updateField(idx, "refColumn", e.target.value)
+                          }
+                        />
+                      )}
+                </TableCell>
+                <TableCell className="mx-auto text-center w-48">
+                  {f.foreignKey && (
+                        <input
+                          type="checkbox"
+                          checked={!!f.onDeleteCascade}
+                          onChange={(e) =>
+                            updateField(idx, "onDeleteCascade", e.target.checked)
+                          }
+                        />
+                      )}
+                </TableCell>
+                <TableCell className="mx-auto text-center w-48">
+                  {f.foreignKey && (
+                        <input
+                          type="checkbox"
+                          checked={!!f.onUpdateCascade}
+                          onChange={(e) =>
+                            updateField(idx, "onUpdateCascade", e.target.checked)
+                          }
+                        />
+                      )}
+                </TableCell>
+                <TableCell className="mx-auto text-center w-48">
+                  <input
+                        type="checkbox"
+                        checked={!!f.toShowOnLayout}
+                        onChange={(e) =>
+                          updateField(idx, "toShowOnLayout", e.target.checked)
                         }
                       />
-                    )}
-              </TableCell>
-              <TableCell className="mx-auto text-center w-48">
-                <input
-                      type="checkbox"
-                      checked={!!f.toShowOnLayout}
-                      onChange={(e) =>
-                        updateField(idx, "toShowOnLayout", e.target.checked)
-                      }
-                    />
-              </TableCell>
-              <TableCell>
-                {!f.system && (
-                      <button onClick={() => removeField(idx)}>Delete</button>
-                    )}
-              </TableCell>
-            </TableRow>
-            ))}
-          </TableBody> 
-        </Table>
+                </TableCell>
+                <TableCell>
+                  {!f.system && (
+                        <button onClick={() => removeField(idx)}>Delete</button>
+                      )}
+                </TableCell>
+              </TableRow>
+              ))}
+            </TableBody> 
+          </Table>
+        </div>
+
+        <div className="mt-14 flex justify-center gap-4 p-4" >
+          <Button onClick={addField} className="">
+            + Add Column
+          </Button> 
+          <Button onClick={handleGenerateClick}>
+            Generate
+          </Button>
+            <AlertDialog open={openConfirm} onOpenChange={setOpenConfirm}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will generate entity for table <strong>{tableName}</strong>.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+                  <AlertDialogAction
+                    onClick={() => {
+                      setOpenConfirm(false); // close dialog first
+                      handleSubmit();        // then call API
+                    }}
+                  >
+                  Generate
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+        </div>
       </div>
-
-      <div className="mt-14 flex justify-center gap-4 p-4" >
-        <Button onClick={addField} className="">
-          + Add Column
-        </Button> 
-        <Button onClick={handleGenerateClick}>
-          Generate
-        </Button>
-          <AlertDialog open={openConfirm} onOpenChange={setOpenConfirm}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will generate entity for table <strong>{tableName}</strong>.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-
-                <AlertDialogAction
-                  onClick={() => {
-                    setOpenConfirm(false); // close dialog first
-                    handleSubmit();        // then call API
-                  }}
-                >
-                 Generate
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-      </div>
-
     </div>
   );
 }

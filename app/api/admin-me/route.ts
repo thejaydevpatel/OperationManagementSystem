@@ -8,7 +8,8 @@ export async function GET(){
   const user = {
     code: cookieStore.get("admin_code")?.value,
     name: cookieStore.get("admin_name")?.value,
-    email: cookieStore.get("admin_email")?.value
+    email: cookieStore.get("admin_email")?.value,
+    role: cookieStore.get("admin_role")?.value 
   };
 
   return NextResponse.json(user);

@@ -159,7 +159,13 @@ import { useDebounce } from "@/hooks/use-debounce";
  
 import { useSearchParams } from "next/navigation";
  import { Switch } from "@/components/ui/switch";
-
+  import {
+   Tooltip,
+   TooltipContent,
+   TooltipProvider,
+   TooltipTrigger,
+ } from "@/components/ui/tooltip";
+import { exportToExcel } from "@/utils/exportToExcel";
 import {
   Select,
   SelectTrigger,
@@ -436,7 +442,53 @@ React.useEffect(() => {
     setList(updatedRows);
   };
 
+const handleExport = () => {
+  const exportData = filteredRows.map((row, index) => ({
+    "Sr No": index + 1,
+    ${visibleFields.map((f) => {
 
+      // Column Name Formatting
+      const colName = f.name
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+      // Dropdown / Radio
+      if (
+        f.specificControl === "Radio" ||
+        f.specificControl === "NormalDropDown"
+      ) {
+return `"${colName}":
+  ${f.name}?.find?.(o => Number(o.id) === Number(row.${f.name}))?.name || ""`;
+      }
+
+      // Boolean
+      if (f.type === "BOOLEAN") {
+        return `"${colName}":
+  row.${f.name} ? "Yes" : "No"`;
+      }
+
+      // Date
+      if (
+        f.type === "TIMESTAMP" ||
+        f.type === "TIMESTAMP WITH TIME ZONE"
+      ) {
+        return `"${colName}":
+  row.${f.name}
+    ? new Date(row.${f.name}).toLocaleString("en-GB")
+    : ""`;
+      }
+
+      // Default
+      return `"${colName}": row.${f.name}`;
+    }).join(",\n")}
+  }));
+
+  exportToExcel(
+    exportData,
+    "${tableName}",
+    "${toPascalCaseText(tableName)}"
+  );
+};
   
 const filteredRows = rows.filter((row) => {
   if (statusFilter === "active" && !row.is_active) return false;
@@ -477,8 +529,18 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
         </div>
       </div>
 

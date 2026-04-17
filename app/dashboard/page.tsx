@@ -391,7 +391,7 @@ const displayData = isRTL ? [...chartData].reverse() : chartData;
   return (
     <div className="p-6 min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-3 mt-8 mb-8">
         <LayoutDashboard size={24} />
         <h1 className="text-2xl font-bold">Dashboard</h1>
       </div>
@@ -456,60 +456,55 @@ const displayData = isRTL ? [...chartData].reverse() : chartData;
             const circumference = 2 * Math.PI * radius;
             const offset = circumference * (1 - card.percent / 100);
 
-            return (
-              <div
-                key={i}
-                // className={`relative flex items-center p-5 rounded-xl shadow-md text-white ${card.color}`}
-                className={`
-                relative flex items-center p-5 rounded-xl shadow-md text-white ${card.color}
-                ${isRTL ? "flex-row-reverse text-right" : ""}
-                `}
-              >
-                {/* <div className="relative w-16 h-16 mr-4"> */}
-                <div className={`relative w-16 h-16 ${isRTL ? "ml-4" : "mr-4"}`}>
-                  <svg className="w-16 h-16 rotate-[-90deg]">
-                    <circle
-                      cx="32"
-                      cy="32"
-                      r={radius}
-                      stroke="rgba(255,255,255,0.3)"
-                      strokeWidth="6"
-                      fill="none"
-                    />
-                    <circle
-                      cx="32"
-                      cy="32"
-                      r={radius}
-                      stroke="white"
-                      strokeWidth="6"
-                      fill="none"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={offset}
-                      strokeLinecap="round"
-                    />
-                  </svg>
+return (
+  <div
+    key={i}
+    dir={isRTL ? "rtl" : "ltr"}
+    className={`
+      relative flex items-center gap-4 p-5 rounded-xl shadow-md text-white ${card.color}
+    `}
+  >
+    {/* Circle */}
+    <div className="relative w-16 h-16 shrink-0">
+      <svg className="w-16 h-16 rotate-[-90deg]">
+        <circle
+          cx="32"
+          cy="32"
+          r={radius}
+          stroke="rgba(255,255,255,0.3)"
+          strokeWidth="6"
+          fill="none"
+        />
+        <circle
+          cx="32"
+          cy="32"
+          r={radius}
+          stroke="white"
+          strokeWidth="6"
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+        />
+      </svg>
 
-                  <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold">
-                    {Math.round(card.percent)}%
-                  </div>
-                </div>
+      <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold">
+        {Math.round(card.percent)}%
+      </div>
+    </div>
 
-                {/* <div className="flex flex-col ml-5 "> */}
-                <div className={`flex flex-col ${isRTL ? "mr-5" : "ml-5"}`}>
-                  <p className="text-sm opacity-90">{card.title}</p>
-                  <p className="text-2xl font-bold">{card.count}</p>
-                </div>
+    {/* Text */}
+    <div className="flex flex-col">
+      <p className="text-sm opacity-90">{card.title}</p>
+      <p className="text-2xl font-bold">{card.count}</p>
+    </div>
 
-                {/* <div className="absolute top-3 right-3 opacity-80"> */}
-                <div
-                  className={`absolute top-3 opacity-80 ${
-                    isRTL ? "left-3" : "right-3"
-                  }`}
-                >
-                  <Icon className="w-6 h-6 " />
-                </div>
-              </div>
-            );
+    {/* Icon */}
+    <div className="absolute top-3 end-3 opacity-80">
+      <Icon className="w-6 h-6" />
+    </div>
+  </div>
+);
           })}
         </div>
       )}
@@ -673,7 +668,7 @@ const displayData = isRTL ? [...chartData].reverse() : chartData;
                           </td>
 
                           <td className="p-2">
-                            <Link href={`/Reports/duty-chart/allocate/${row.bookingId}`}>
+                            <Link href={`/dashboard/Management/duty-chart/allocate/${row.bookingId}`}>
                               <button className="border px-2 py-1 rounded text-sm">
                                 {!isAllocated ? "Allocate" : "Modify"}
                               </button>
@@ -720,19 +715,22 @@ const displayData = isRTL ? [...chartData].reverse() : chartData;
                     height={70}
                     reversed={isRTL}
                     tickMargin={isRTL ? 50 : 8}
-                    tick={(props) => {
+                    tick={(props: any) => {
                       const { x, y, payload } = props;
 
-                      const shift = isRTL ? 65 : 10;   // ⭐ tune here
+                      const shift = isRTL ? 65 : 10;
+
+                      const xPos = Number(x);
+                      const yPos = Number(y);
 
                       return (
                         <text
-                          x={x - shift}
-                          y={y}
+                          x={xPos - shift}
+                          y={yPos}
                           dy={16}
                           textAnchor="end"
                           fill="#666"
-                          transform={`rotate(-30 ${x - shift} ${y})`}   // ⭐ VERY IMPORTANT
+                          transform={`rotate(-30 ${xPos - shift} ${yPos})`}
                         >
                           {payload.value}
                         </text>

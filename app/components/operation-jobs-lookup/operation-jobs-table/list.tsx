@@ -9,7 +9,13 @@ import { useDebounce } from "@/hooks/use-debounce";
  
 import { useSearchParams } from "next/navigation";
  import { Switch } from "@/components/ui/switch";
-
+import { exportToExcel } from "@/utils/exportToExcel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectTrigger,
@@ -298,7 +304,48 @@ React.useEffect(() => {
     setList(updatedRows);
   };
 
+const handleExport = () => {
+  const exportData = filteredRows.map((row, index) => ({
+    "Sr No.": index + 1,
+    "External Booking Id": row.external_booking_id || "-",
+    "Booking Type": row.booking_type || "-",
+    "Service Type": row.service_type || "-",
+    "Pax": row.pax || "-",
 
+    "Vehicle Type":
+      vehicle_type_required.find(v => Number(v.id) === Number(row.vehicle_type_required))?.name || "-",
+
+    "Pickup Location":
+      pickup_location_id.find(l => Number(l.id) === Number(row.pickup_location_id))?.name || "-",
+
+    "Dropoff Location":
+      dropoff_location_id.find(l => Number(l.id) === Number(row.dropoff_location_id))?.name || "-",
+
+    "Scheduled Start Time": row.scheduled_start_time
+      ? new Date(row.scheduled_start_time).toLocaleString("en-GB")
+      : "-",
+
+    "Scheduled End Time": row.scheduled_end_time
+      ? new Date(row.scheduled_end_time).toLocaleString("en-GB")
+      : "-",
+
+    "Job Status":
+      job_status_id.find(s => Number(s.id) === Number(row.job_status_id))?.name || "-",
+
+    "Priority": row.priority || "-",
+    "Notes": row.notes || "-",
+    "Client": row.client || "-",
+    "Agent": row.agent || "-",
+    "Address": row.address || "-",
+
+    "Guide Language":
+      guide_language_required.find(l => Number(l.id) === Number(row.guide_language_required))?.name || "-",
+
+    "Status": row.is_active ? "Active" : "Suspended",
+  }));
+
+  exportToExcel(exportData, "Operation_Jobs");
+};
   
 const filteredRows = rows.filter((row) => {
   if (statusFilter === "active" && !row.is_active) return false;
@@ -339,8 +386,19 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 

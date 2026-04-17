@@ -76,26 +76,26 @@ const whereClause =
     j."service_type",
     j."notes" AS "remark",
     
-
     vt."name" AS "vehicleType",
 
     d."name" AS "driverName",
     d."id" AS "driverId",
     d."phone" AS "driverPhone",
 
-COALESCE(gl.guide_ids, '') AS "guide_ids",
-COALESCE(gl.guide_name, '') AS "guideName",
-COALESCE(gl.guide_phone, '') AS "guide_phone",
-COALESCE(gl.language_name, '') AS "language_name",
-   lm.name AS "guideLanguage",
-   gl.language_name AS "assignedLanguage" ,
+    COALESCE(gl.guide_ids, '') AS "guide_ids",
+    COALESCE(gl.guide_name, '') AS "guideName",
+    COALESCE(gl.guide_phone, '') AS "guide_phone",
+    COALESCE(gl.language_name, '') AS "language_name",
+
+    lm.name AS "guideLanguage",
+    gl.language_name AS "assignedLanguage" ,
     COALESCE(ga.guide_count, 0) AS "noOfGuide",
 
     v."registration_number" AS "registrationNumber",
     v.id AS "vehicleId",
 
     sup.name AS "supplierName",
-sup.id AS "supplierId",
+    sup.id AS "supplierId",
 
     da."short_id" AS "dutySlipNo",
 
@@ -105,8 +105,8 @@ sup.id AS "supplierId",
     s."name" AS "status",
     s."name" AS "jobStatusName",
  
-COALESCE(da_cost.vehicle_price, 0) AS "vehiclePrice",
-COALESCE(ga_cost.guide_price, 0) AS "guidePrice"
+    COALESCE(da_cost.vehicle_price, 0) AS "vehiclePrice",
+    COALESCE(ga_cost.guide_price, 0) AS "guidePrice"
     
 
   FROM "operation_jobs_lookup_operation_jobs_table" j

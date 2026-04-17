@@ -9,7 +9,13 @@ import { useDebounce } from "@/hooks/use-debounce";
  
 import { useSearchParams } from "next/navigation";
  import { Switch } from "@/components/ui/switch";
-
+import { exportToExcel } from "@/utils/exportToExcel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectTrigger,
@@ -270,7 +276,37 @@ React.useEffect(() => {
     setList(updatedRows);
   };
 
+const handleExport = () => {
+  const exportData = filteredRows.map((row, index) => ({
+    "Sr No.": index + 1,
 
+    "Job Id":
+      job_id.find(o => Number(o.id) === Number(row.job_id))
+        ?.external_booking_id || "-",
+
+    "Action": row.action || "-",
+
+    "Old Status":
+      old_status_id.find(o => Number(o.id) === Number(row.old_status_id))
+        ?.name || "-",
+
+    "New Status":
+      new_status_id.find(o => Number(o.id) === Number(row.new_status_id))
+        ?.name || "-",
+
+    "Performed By": row.performed_by || "-",
+
+    "Timestamp": row.created_at
+      ? new Date(row.created_at).toLocaleString()
+      : "-",
+
+    "Notes": row.notes || "-",
+
+    "Status": row.is_active ? "Active" : "Suspended",
+  }));
+
+  exportToExcel(exportData, "Operation_Logs");
+};
   
 const filteredRows = rows.filter((row) => {
   if (statusFilter === "active" && !row.is_active) return false;
@@ -311,8 +347,19 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 
@@ -363,7 +410,7 @@ const filteredRows = rows.filter((row) => {
               <TableHead>Status</TableHead>
 
               {/*<TableHead>Used/Unused</TableHead>*/}
-              <TableHead>Actions</TableHead>
+              {/* <TableHead>Actions</TableHead> */}
             </TableRow>
           </TableHeader>
 
@@ -463,7 +510,7 @@ const filteredRows = rows.filter((row) => {
                                 label={row.is_used ? "Used" : "Unused"}
                               />
                             </TableCell> */}
-
+{/* 
                             <TableCell>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -487,7 +534,7 @@ const filteredRows = rows.filter((row) => {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
-                            </TableCell>
+                            </TableCell> */}
                           </TableRow>
                         )}
                       </Draggable>

@@ -9,7 +9,13 @@ import { useDebounce } from "@/hooks/use-debounce";
  
 import { useSearchParams } from "next/navigation";
  import { Switch } from "@/components/ui/switch";
-
+import { exportToExcel } from "@/utils/exportToExcel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectTrigger,
@@ -230,7 +236,22 @@ const List: React.FC<vehicle_types_tablePaginationTableProps> = ({
     setList(updatedRows);
   };
 
+const handleExport = () => {
+  if (!filteredRows || filteredRows.length === 0) {
+    alert("No data to export");
+    return;
+  }
 
+  const exportData = filteredRows.map((row, index) => ({
+    "Sr No.": index + 1,
+    Name: row.name,
+    Capacity: row.capacity,
+    "Luggage Capacity": row.luggage_capacity,
+    Status: row.is_active ? "Active" : "Suspended",
+  }));
+
+  exportToExcel(exportData, "Vehicle_Types");
+};
   
 const filteredRows = rows.filter((row) => {
   if (statusFilter === "active" && !row.is_active) return false;
@@ -271,8 +292,19 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 

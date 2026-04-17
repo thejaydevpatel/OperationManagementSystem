@@ -13,9 +13,10 @@ const result = await pool.query(`
   WHERE is_deleted = false
   ORDER BY name
 `);
-
+console.log('====================================');
+console.log(result.rows);
+console.log('====================================');
 return NextResponse.json(result.rows);
- 
 
 } catch (err) {
 console.error("SUPPLIER API ERROR:", err);

@@ -284,7 +284,7 @@ const filteredRows = rows.filter((row) => {
 
         <div className="flex gap-2">
           <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 

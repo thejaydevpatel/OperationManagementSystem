@@ -9,7 +9,13 @@ import { useDebounce } from "@/hooks/use-debounce";
  
 import { useSearchParams } from "next/navigation";
  import { Switch } from "@/components/ui/switch";
-
+import { exportToExcel } from "@/utils/exportToExcel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectTrigger,
@@ -28,7 +34,13 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -170,6 +182,19 @@ const [supplier_id, setSupplier_id] = React.useState<any[]>([]);
 
 const [guide_status_id, setGuide_status_id] = React.useState<any[]>([]);
 
+const [openLangModal, setOpenLangModal] = React.useState(false);
+const [selectedLanguages, setSelectedLanguages] = React.useState<any[]>([]);
+
+const handleViewLanguages = async (guideId: number) => {
+  const res = await fetch(
+    `/api/lookup/guide-language-price?guide_id=${guideId}`
+  );
+
+  const data = await res.json();
+
+  setSelectedLanguages(data.data || []);
+  setOpenLangModal(true);
+};
 
   // read page from url
   React.useEffect(() => {
@@ -270,7 +295,53 @@ React.useEffect(() => {
     setList(updatedRows);
   };
 
+const handleExport = async () => {
+  try {
+    // Prepare data for export
+    const exportData = await Promise.all(
+      filteredRows.map(async (row, index) => {
+        // Fetch languages for each guide
+        const res = await fetch(
+          `/api/lookup/guide-language-price?guide_id=${row.id}`
+        );
+        const data = await res.json();
 
+        const languages = (data.data || [])
+          .map((item: any) => {
+            const langName =
+              language_id.find(
+                (l) => Number(l.id) === Number(item.language_id)
+              )?.name || "-";
+
+            return `${langName} (${item.price})`;
+          })
+          .join(", ");
+
+        return {
+          "Sr No": index + 1,
+          Name: row.name || "-",
+          Phone: row.phone || "-",
+          Supplier:
+            supplier_id.find(
+              (s) => Number(s.id) === Number(row.supplier_id)
+            )?.name || "-",
+          "Guide Status":
+            guide_status_id.find(
+              (g) => Number(g.id) === Number(row.guide_status_id)
+            )?.name || "-",
+          Languages: languages || "-",
+          Notes: row.notes || "-",
+          Status: row.is_active ? "Active" : "Suspended",
+        };
+      })
+    );
+
+    // Call utility
+    exportToExcel(exportData, "Tour_Guides_List");
+  } catch (error) {
+    console.error("Export failed:", error);
+  }
+};
   
 const filteredRows = rows.filter((row) => {
   if (statusFilter === "active" && !row.is_active) return false;
@@ -311,8 +382,19 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 
@@ -355,9 +437,10 @@ const filteredRows = rows.filter((row) => {
               <TableHead>Sr No.</TableHead>
               <TableHead>Name</TableHead>
 <TableHead>Phone</TableHead>
-<TableHead>Language Id</TableHead>
+{/* <TableHead>Language Id</TableHead> */}
 <TableHead>Supplier Id</TableHead>
 <TableHead>Guide Status Id</TableHead>
+<TableHead>Languages</TableHead>
 <TableHead>Notes</TableHead>
               <TableHead>Status</TableHead>
               {/*<TableHead>Used/Unused</TableHead>*/}
@@ -408,11 +491,11 @@ const filteredRows = rows.filter((row) => {
   </TableCell>
 
 
-    <TableCell>
+    {/* <TableCell>
       <p className="text-muted-foreground text-sm font-normal">
     {language_id.find(o => Number(o.id) === Number(row.language_id))?.name || "-"}
       </p>
-    </TableCell>
+    </TableCell> */}
   
 
     <TableCell>
@@ -429,13 +512,24 @@ const filteredRows = rows.filter((row) => {
     </TableCell>
   
 
+<TableCell>
+<Button
+  size="sm"
+  variant="outline"
+  onClick={() => {
+    console.log("CLICKED", row.id);
+    handleViewLanguages(row.id);
+  }}
+>
+  View
+</Button>
+</TableCell>
+
   <TableCell>
     <p className="text-muted-foreground text-sm font-normal">
       {row.notes || "-"}
     </p>
   </TableCell>
-
-
                       
                             <TableCell>
                               <div className="flex items-center gap-2">
@@ -578,8 +672,40 @@ const filteredRows = rows.filter((row) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={openLangModal} onOpenChange={setOpenLangModal}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Languages & Price</AlertDialogTitle>
+    </AlertDialogHeader>
+
+    <div className="space-y-2">
+      {selectedLanguages.length > 0 ? (
+        selectedLanguages.map((item, index) => (
+          <div
+            key={index}
+            className="flex justify-between border-b py-2"
+          >
+            <span> {language_id.find(l => Number(l.id) === Number(item.language_id))?.name || "-"}</span>
+            <span>{item.price}</span>
+          </div>
+        ))
+      ) : (
+        <p>No languages found</p>
+      )}
+    </div>
+
+    <AlertDialogFooter>
+      <AlertDialogAction onClick={() => setOpenLangModal(false)}>
+        Close
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
     </>
   );
 };
+
+
 
 export default List;

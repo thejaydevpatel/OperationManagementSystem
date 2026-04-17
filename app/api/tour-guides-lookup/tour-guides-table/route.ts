@@ -11,6 +11,7 @@ import { getUsedUnusedRows } from "@/app/api/lib/db/used-unused-rows/used-unused
 
 const dbName = process.env.PGDB_NAME_COMMON!;
 
+
 export async function GET(req: NextRequest) {
   const startTime = getStartTime();
   try {
@@ -42,16 +43,7 @@ export async function GET(req: NextRequest) {
     const totalPages =
       countResult?.rows.length > 0 ? Math.ceil(totalRecords / pageSize) : 0;
 
-      if (result?.rows.length > 0) {
-            // const usedUnusedRows = await checkLookupUsage(
-            //   dbName,
-            //   "tour_guides_lookup_tour_guides_table"
-            // );
-      
-            // result.rows.forEach((element) => {
-            //   const usageStatus = usedUnusedRows.find((a) => a.id === element.id);
-            //   element.is_used = usageStatus?.usage_status;
-            // });
+      if (result?.rows.length > 0) { 
             const usedUnusedRows = await getUsedUnusedRows(
                         "tour_guides_lookup_tour_guides_table",
                         client
@@ -77,33 +69,164 @@ export async function GET(req: NextRequest) {
   }
 }
 
+
+// export async function POST(req: NextRequest) {
+//   const startTime = getStartTime();
+//   try {
+//   const client = getDbConnection(dbName);
+// const referer = req.headers.get("referer");
+// const userDetails = await retriveTokenDetails(req);
+
+// const systemFields = {
+//   tenant_id: userDetails?.tenantId,
+//   created_by: userDetails?.empCode,
+//   created_at: new Date().toISOString(),
+//   host_ip: userDetails?.userIp,
+//   url: referer && referer.trim() !== "" ? referer : req.url,
+// };
+
+// // REMOVE NON-TABLE FIELDS BEFORE INSERT
+// const { languages, id, short_id, ...rest } = input;
+
+// const body = {
+//   ...rest,
+//   ...systemFields,
+// };
+    
+    
+ 
+// // remove UI/helper fields
+// const filteredBody = Object.fromEntries(
+//   Object.entries(body).filter(
+//     ([key, value]) =>
+//       !key.endsWith("Logo") &&
+//       value !== undefined &&
+//       value !== null
+//   )
+// );
+
+// const keys = Object.keys(filteredBody);
+// const values = Object.values(filteredBody);
+
+// if (keys.length === 0) {
+//   return ApiResponse.failed("No data provided", startTime);
+// }
+
+// const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
+
+// const query = `
+//   INSERT INTO tour_guides_lookup_tour_guides_table
+//   (${keys.join(", ")})
+//   VALUES (${placeholders})
+//   RETURNING *
+// `;
+
+// const result = await client.query(query, values);
+
+// const guideId = result.rows[0].id;
+
+// const input = await req.json();
+// const { languages = [] } = input;
+
+// // insert languages into child table
+// if (languages?.length) {
+//   for (const lang of body.languages) {
+//     await client.query(
+//       `INSERT INTO lookup_guide_language_price 
+//        (guide_id, language_id, price)
+//        VALUES ($1, $2, $3)`,
+//       [guideId, lang.language_id, lang.price]
+//     );
+//   }
+// }
+
+//     return ApiResponse.created(result.rows[0].id, startTime);
+//   } catch (err) {
+//     console.error("Error inserting tour_guides_lookup_tour_guides_table:", err);
+//     return ApiResponse.failed("", startTime);
+//   }
+// }
+
 export async function POST(req: NextRequest) {
   const startTime = getStartTime();
+
   try {
-  const client = getDbConnection(dbName);
-  const referer = req.headers.get("referer");
-  const body: Partial<TourGuidesTableEntity> = await req.json();
+    const client = getDbConnection(dbName);
+    const referer = req.headers.get("referer");
 
+    // 1️⃣ READ INPUT
+    const input: Partial<TourGuidesTableEntity> & {
+      languages?: {
+        language_id: number;
+        price: number;
+      }[];
+    } = await req.json();
+
+    const { languages = [], ...rest } = input;
+
+    // 2️⃣ USER INFO
     const userDetails = await retriveTokenDetails(req);
-    body.tenant_id = userDetails?.tenantId;
-    body.created_by = userDetails?.empCode;
-    body.created_at = new Date().toISOString();
-    body.host_ip = userDetails?.userIp;
-    body.url = referer && referer.trim() !== "" ? referer : req.url;
-    
-    
-    
 
+    const systemFields = {
+      tenant_id: userDetails?.tenantId,
+      created_by: userDetails?.empCode,
+      created_at: new Date().toISOString(),
+      host_ip: userDetails?.userIp,
+      url: referer && referer.trim() !== "" ? referer : req.url,
+    };
 
-    
+    // 3️⃣ BUILD MAIN BODY (IMPORTANT FIX)
+    const body = {
+      ...rest,
+      ...systemFields,
+    };
 
-    const keys = Object.keys(body);
-    const values = Object.values(body);
-    if (keys.length === 0) return ApiResponse.failed("No data provided", startTime);
+    // 4️⃣ FILTER BODY
+    const filteredBody = Object.fromEntries(
+      Object.entries(body).filter(
+        ([key, value]) =>
+          !key.endsWith("Logo") &&
+          value !== undefined &&
+          value !== null
+      )
+    );
+
+    const keys = Object.keys(filteredBody);
+    const values = Object.values(filteredBody);
+
+    if (keys.length === 0) {
+      return ApiResponse.failed("No data provided", startTime);
+    }
+
     const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
-    const query = `INSERT INTO tour_guides_lookup_tour_guides_table (${keys.join(", ")}) VALUES (${placeholders}) RETURNING *`;
+
+    const query = `
+      INSERT INTO tour_guides_lookup_tour_guides_table
+      (${keys.join(", ")})
+      VALUES (${placeholders})
+      RETURNING *
+    `;
+
     const result = await client.query(query, values);
+
+    const guideId = result.rows[0].id;
+
+    // 5️⃣ INSERT LANGUAGES (FIXED)
+    if (languages.length > 0) {
+      for (const lang of languages) {
+        await client.query(
+          `
+          INSERT INTO lookup_guide_language_price 
+          (guide_id, language_id, price)
+          VALUES ($1, $2, $3)
+          `,
+          [guideId, lang.language_id, lang.price]
+        );
+      }
+    }
+
     return ApiResponse.created(result.rows[0].id, startTime);
+
   } catch (err) {
     console.error("Error inserting tour_guides_lookup_tour_guides_table:", err);
     return ApiResponse.failed("", startTime);

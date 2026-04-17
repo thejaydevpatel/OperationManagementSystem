@@ -54,7 +54,7 @@ const Page = () => {
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
-            Agents Table List</CardTitle>
+            Agents</CardTitle>
            
         </CardHeader>
 

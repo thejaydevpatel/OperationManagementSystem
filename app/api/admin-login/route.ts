@@ -35,15 +35,9 @@ response.cookies.set("admin_code", user.user_code , { path:"/" });
 response.cookies.set("admin_name", user.name , { path:"/" });
 response.cookies.set("admin_email", user.email , { path:"/" });
 
+response.cookies.set("admin_role", user.role , { path:"/" });
+
 return response;
-
-    // ✅ set cookie
-    response.cookies.set("admin_auth", "true", {
-      httpOnly: true,
-      path: "/"
-    });
-
-    return response;
 
   } catch (err) {
     console.log("Login Error", err);

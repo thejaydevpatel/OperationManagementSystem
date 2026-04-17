@@ -24,16 +24,46 @@ export async function POST(req: Request) {
     const toDelete = existingIds.filter((id: number) => !incomingIds.includes(id));
 
     if (toDelete.length > 0) {
+      const oldRows = await client.query(
+        `SELECT allocation_status_id FROM driver_allocation_lookup_driver_allocation_table WHERE id = ANY($1)`,
+        [toDelete]
+      );
+
       await client.query(
         `DELETE FROM driver_allocation_lookup_driver_allocation_table WHERE id = ANY($1)`,
         [toDelete]
       );
+      //log
+      await client.query(
+        `
+        INSERT INTO operation_logs_lookup_operation_logs_table
+        (job_id, action, old_status_id, new_status_id, performed_by, notes, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        `,
+        [
+          jobId,
+          "DRIVER_REMOVED",
+          oldRows.rows[0]?.allocation_status_id || null, // take first (or loop if needed)
+          null,
+          "admin",
+          `Removed ${toDelete.length} driver allocation(s)`
+        ]
+      );
     }
 
+    
     // 3️⃣ INSERT / UPDATE
     for (const row of rows) {
       if (row.id) {
         // UPDATE
+// ✅ first update
+const prev = await client.query(
+  `SELECT allocation_status_id FROM driver_allocation_lookup_driver_allocation_table WHERE id = $1`,
+  [row.id]
+);
+
+const oldStatus = prev.rows[0]?.allocation_status_id || null;
+
 await client.query(
 `
 UPDATE driver_allocation_lookup_driver_allocation_table
@@ -60,8 +90,26 @@ WHERE id = $9
   row.id
 ]
 );
+
+// ✅ THEN log
+await client.query(
+  `
+  INSERT INTO operation_logs_lookup_operation_logs_table
+  (job_id, action, old_status_id, new_status_id, performed_by, notes, created_at)
+  VALUES ($1, $2, $3, $4, $5, $6, NOW())
+  `,
+  [
+    jobId,
+    "DRIVER_UPDATED",
+    oldStatus,
+    2,
+    "admin",
+    `Updated driver ${row.driver} with vehicle ${row.vehicle}`
+  ]
+);
       } else {
         // INSERT
+// ✅ first insert
 await client.query(
   `
   INSERT INTO driver_allocation_lookup_driver_allocation_table
@@ -93,12 +141,29 @@ await client.query(
   `,
   [
     jobId,
-    row.supplier || null,   // ✅ FIX HERE
+    row.supplier || null,
     row.driver,
     row.vehicle,
     2,
     row.manualCost || null,
     row.remark || null,
+  ]
+);
+
+// ✅ THEN log
+await client.query(
+  `
+  INSERT INTO operation_logs_lookup_operation_logs_table
+  (job_id, action, old_status_id, new_status_id, performed_by, notes, created_at)
+  VALUES ($1, $2, $3, $4, $5, $6, NOW())
+  `,
+  [
+    jobId,
+    "DRIVER_ALLOCATED",
+    null,
+    2,
+    "admin",
+    `Assigned driver ${row.driver} to vehicle ${row.vehicle}`
   ]
 );
       }

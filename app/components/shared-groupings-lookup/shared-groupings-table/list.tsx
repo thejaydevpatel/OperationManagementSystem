@@ -9,7 +9,13 @@ import { useDebounce } from "@/hooks/use-debounce";
  
 import { useSearchParams } from "next/navigation";
  import { Switch } from "@/components/ui/switch";
-
+import { exportToExcel } from "@/utils/exportToExcel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectTrigger,
@@ -256,7 +262,35 @@ React.useEffect(() => {
     setList(updatedRows);
   };
 
+const handleExport = () => {
+  const exportData = filteredRows.map((row, index) => ({
+    "Sr No.": index + 1,
 
+    "Vehicle":
+      vehicle_id.find(o => Number(o.id) === Number(row.vehicle_id))
+        ?.registration_number || "-",
+
+    "Driver":
+      driver_id.find(o => Number(o.id) === Number(row.driver_id))
+        ?.name || "-",
+
+    "Start Time": row.start_time
+      ? new Date(row.start_time).toLocaleString("en-GB")
+      : "-",
+
+    "End Time": row.end_time
+      ? new Date(row.end_time).toLocaleString("en-GB")
+      : "-",
+
+    "Max Capacity": row.max_capacity || "-",
+
+    "Current Pax": row.current_pax || "-",
+
+    "Status": row.is_active ? "Active" : "Suspended",
+  }));
+
+  exportToExcel(exportData, "Shared_Groupings");
+};
   
 const filteredRows = rows.filter((row) => {
   if (statusFilter === "active" && !row.is_active) return false;
@@ -297,8 +331,19 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 

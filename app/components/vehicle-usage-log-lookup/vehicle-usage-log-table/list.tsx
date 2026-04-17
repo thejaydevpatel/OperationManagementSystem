@@ -9,7 +9,13 @@ import { useDebounce } from "@/hooks/use-debounce";
  
 import { useSearchParams } from "next/navigation";
  import { Switch } from "@/components/ui/switch";
-
+import { exportToExcel } from "@/utils/exportToExcel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectTrigger,
@@ -270,7 +276,44 @@ React.useEffect(() => {
     setList(updatedRows);
   };
 
+const handleExport = () => {
+  if (!filteredRows || filteredRows.length === 0) {
+    alert("No data to export");
+    return;
+  }
 
+  const exportData = filteredRows.map((row, index) => ({
+    "Sr No.": index + 1,
+
+    "Vehicle": vehicle_id.find(
+      (o) => Number(o.id) === Number(row.vehicle_id)
+    )?.vehicle_type_id || "-",
+
+    "Job": job_id.find(
+      (o) => Number(o.id) === Number(row.job_id)
+    )?.external_booking_id || "-",
+
+    "Driver": driver_id.find(
+      (o) => Number(o.id) === Number(row.driver_id)
+    )?.name || "-",
+
+    "Start Time": row.start_time
+      ? new Date(row.start_time).toLocaleString("en-GB")
+      : "-",
+
+    "End Time": row.end_time
+      ? new Date(row.end_time).toLocaleString("en-GB")
+      : "-",
+
+    "Distance Covered": row.distance_covered || "-",
+
+    "Notes": row.notes || "-",
+
+    "Status": row.is_active ? "Active" : "Suspended",
+  }));
+
+  exportToExcel(exportData, "Vehicle_Usage_Log");
+};
   
 const filteredRows = rows.filter((row) => {
   if (statusFilter === "active" && !row.is_active) return false;
@@ -311,8 +354,19 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 

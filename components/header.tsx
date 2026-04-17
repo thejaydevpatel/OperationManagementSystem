@@ -4,6 +4,7 @@ import { RouteProgress } from "@/components/route-progress"
 import { Bell, User } from "lucide-react"
 import {
   Dialog,
+  DialogClose ,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -16,15 +17,23 @@ import {
 import { ThemeToggle } from "./theme-toggle"
 import DirectionToggle from "@/components/direction-toggle";
 import Image from "next/image";
- 
-import { useEffect, useState } from "react";
+ import Link from "next/link";
+ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Header() {
 
   const [user,setUser] = useState<any>(null);
+const [notifications, setNotifications] = useState<any[]>([]);
+const [openNotif, setOpenNotif] = useState(false);
 
   useEffect(()=>{
   fetch("/api/admin-me")
@@ -50,73 +59,200 @@ const handleLogout = async () => {
 
 };
 
+const fetchNotifications = async () => {
+  try {
+    const res = await fetch("/api/notifications");
+    const data = await res.json();
+    setNotifications(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
   return (
     
         <header className="fixed top-0 left-0 right-0 h-14 border-b bg-background flex items-center justify-between px-4 z-50">
           <div className="flex items-center gap-4">
             {/* <h1 className="text-lg font-semibold">My Application</h1> */}
+            <Link href="/dashboard">
               <Image
                 src="/techno-logo-main.png"
                 alt="Logo"
                 width={120}
                 height={40}
-                className="h-8 w-auto"
+                className="h-8 w-auto cursor-pointer"
               />
+            </Link>
+            
             <SidebarTrigger />
           </div>
           <div className="flex items-center gap-4">
             
             {/* <User className="h-5 w-5 cursor-pointer" /> */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 cursor-pointer">
-                      {/* <span className="text-sm font-medium">JAYD001</span>  */}
-                      <span className="text-sm font-medium">
-                        {user?.code}
-                      </span>
-                      <User className="h-5 w-5" />
-                    </div>
+        <Dialog>
+          <DialogTitle />
 
-                </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild>
+                  <div className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg hover:bg-muted/50 transition">
                     
-                  
-              </DialogTrigger>
+                    {/* User Code */}
+                    <span className="text-sm font-medium">
+                      {user?.code || "Loading..."}
+                    </span>
 
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>User Details</DialogTitle>
-                  <DialogDescription>
-                    Logged in user information
-                  </DialogDescription>
-                </DialogHeader>
-                  <div className="space-y-3 mt-4">
-                    <div className="p-3 border rounded-lg">
-                      <p className="text-sm text-muted-foreground">Name</p>
-                      {/* <p className="font-medium">Jaydev Patel</p> */}
-                      <p className="font-medium">{user?.name}</p>
-                    </div>
-
-                    <div className="p-3 border rounded-lg">
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      {/* <p className="font-medium">jaydev@email.com</p> */}
-                      <p className="font-medium">{user?.email}</p>
-                    </div>
+                    {/* Icon */}
+                    <User className="h-5 w-5 text-muted-foreground" />
                   </div>
+                </DialogTrigger>
+              </TooltipTrigger>
 
-                  
-              </DialogContent>
-            </Dialog>
+              <TooltipContent>
+                <p>View Profile</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-                      <LogOut
-                        className="h-5 w-5 cursor-pointer text-muted-foreground 
-                        hover:text-red-500 transition"
-                        onClick={handleLogout}
-                      />
+          <DialogContent className="sm:max-w-sm p-0 overflow-hidden">
             
-                <Bell className="ml-2 mr-2 h-5 w-5 cursor-pointer" />
-                <DirectionToggle/>
-                <ThemeToggle/>
+            {/* Header */}
+            <div className="px-5 py-4 border-b bg-muted/40 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{user?.name || "User"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 space-y-3">
+              <div className="p-3 border rounded-lg bg-muted/30">
+                <p className="text-xs text-muted-foreground">User Code</p>
+                <p className="text-sm font-medium">{user?.code}</p>
+              </div>
+
+              <div className="p-3 border rounded-lg bg-muted/30">
+                <p className="text-xs text-muted-foreground">Name</p>
+                <p className="text-sm font-medium">{user?.name}</p>
+              </div>
+
+              <div className="p-3 border rounded-lg bg-muted/30">
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="text-sm font-medium">{user?.email}</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3 border-t cursor-pointer flex justify-end">
+              <DialogClose asChild>
+                <button className="text-xs text-primary px-3 py-1 rounded-md transition-colors hover:bg-muted hover:text-foreground cursor-pointer">
+                  Close
+                </button>
+              </DialogClose>
+            </div>
+
+          </DialogContent>
+        </Dialog>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <LogOut
+                className="h-5 w-5 cursor-pointer text-muted-foreground 
+                hover:text-red-500 transition"
+                onClick={handleLogout}
+              />
+            </TooltipTrigger>
+
+            <TooltipContent>
+              <p>Logout</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+            
+                {/* <Bell className="ml-2 mr-2 h-5 w-5 cursor-pointer" /> */}
+        <Dialog open={openNotif} onOpenChange={setOpenNotif}>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild>
+                  <Bell
+                    className="ml-2 mr-2 h-5 w-5 cursor-pointer"
+                    onClick={fetchNotifications}
+                  />
+                </DialogTrigger>
+              </TooltipTrigger>
+
+              <TooltipContent>
+                <p>Notifications</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Updates</DialogTitle>
+              <DialogDescription>
+                Latest Notifications
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2 mt-3 max-h-60 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No notifications
+                </p>
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className="p-3 border rounded-lg text-sm"
+                  >
+                    <p className="font-medium">{n.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(n.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <TooltipProvider>
+          <div className="flex items-center gap-2">
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DirectionToggle />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Change Direction</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <ThemeToggle />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Change Theme</p>
+              </TooltipContent>
+            </Tooltip>
+
+          </div>
+        </TooltipProvider>
           </div>
           <RouteProgress />
         </header>

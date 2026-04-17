@@ -4,7 +4,8 @@ import React from "react";
 import { Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button"; // ✅ ShadCN Button
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // ✅ ShadCN Card
-
+import { useFieldArray } from "react-hook-form";
+import { useEffect } from "react";
 import ChildCard from "@/app/components/shared/ChildCard";
 import PageContainer from "@/app/components/container/PageContainer";
 import { useService } from "./use-service";
@@ -36,6 +37,7 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
  supplier_id,
  guide_status_id,},
     form: { handleSubmit, errors, onSubmit, control, setValue },
+    
     actions: {
       handleDelete,
       handleStatusChange,
@@ -50,11 +52,56 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
     },
   } = useService(module);
 
+  type FormValues = {
+  name: string;
+  phone: string;
+  supplier_id?: number;
+  guide_status_id: number;
+  notes?: string;
+
+  languages: {
+    language_id: number;
+    name: string;
+    price: number;
+  }[];
+};
+
+type LanguageField = {
+  language_id: number;
+  name: string;
+  price: number;
+};
+
+const { fields, replace } = useFieldArray<FormValues, "languages">({
+  control,
+  name: "languages",
+});
+
     const dropOptions = [
   { value: 1, label: "Option 1" },
   { value: 2, label: "Option 2" },
   { value: 3, label: "Option 3" },
 ];
+
+useEffect(() => {
+  if (language_id.length === 0) return;
+
+  const existing = (control._formValues?.languages || []) as any[];
+
+  const formatted = language_id.map((lang) => {
+    const found = existing.find(
+      (l) => l.language_id === lang.id
+    );
+
+    return {
+      language_id: lang.id,
+      name: lang.name,
+      price: found?.price || 0,
+    };
+  });
+
+  replace(formatted);
+}, [language_id, editId]);
 
   return (
     <>
@@ -104,12 +151,7 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
             control={control}
             errors={errors}
           />
-        </div>
-        {/*<LabelWithTooltip
-          text=""
-          tooltip="Set display order (lower numbers appear first)"
-          href="/admin/docs/order-rules"
-        />*/}
+        </div> 
       </div>
     </div>
 
@@ -122,44 +164,10 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
             control={control}
             errors={errors}
           />
-        </div>
-        {/*<LabelWithTooltip
-          text=""
-          tooltip="Set display order (lower numbers appear first)"
-          href="/admin/docs/order-rules"
-        />*/}
+        </div> 
       </div>
     </div>
-
-    <div className="col-span-1">
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <RHFSelect
-            name="language_id"
-            label="Language Id"
-            control={control}
-            errors={errors}
-            options={language_id.map((op) => {
-              return {
-                value: Number(op.id),
-                label: op.name,
-              };
-            })}
-          />
-        </div>
-        {/*<SpinningRefreshIcon
-          spinning={dropDownloading["language_id"]}
-          onClick={() =>
-            handleRefresh("language_id", handleDropDown)
-          }
-        />*/}
-        {/*<LabelWithTooltip
-          text=""
-          tooltip="Set display order (lower numbers appear first)"
-          href="/admin/docs/order-rules"
-        />*/}
-      </div>
-    </div>
+ 
 
     <div className="col-span-1">
       <div className="flex items-center gap-2">
@@ -176,18 +184,7 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
               };
             })}
           />
-        </div>
-        {/*<SpinningRefreshIcon
-          spinning={dropDownloading["supplier_id"]}
-          onClick={() =>
-            handleRefresh("supplier_id", handleDropDown)
-          }
-        />*/}
-        {/*<LabelWithTooltip
-          text=""
-          tooltip="Set display order (lower numbers appear first)"
-          href="/admin/docs/order-rules"
-        />*/}
+        </div> 
       </div>
     </div>
 
@@ -206,18 +203,7 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
               };
             })}
           />
-        </div>
-        {/*<SpinningRefreshIcon
-          spinning={dropDownloading["guide_status_id"]}
-          onClick={() =>
-            handleRefresh("guide_status_id", handleDropDown)
-          }
-        />*/}
-        {/*<LabelWithTooltip
-          text=""
-          tooltip="Set display order (lower numbers appear first)"
-          href="/admin/docs/order-rules"
-        />*/}
+        </div> 
       </div>
     </div>
 
@@ -230,19 +216,48 @@ const Main = ({ module }: { module: ModuleDetailsString }) => {
             control={control}
             errors={errors}
           />
-        </div>
-        {/*<LabelWithTooltip
-          text=""
-          tooltip="Set display order (lower numbers appear first)"
-          href="/admin/docs/order-rules"
-        />*/}
+        </div> 
       </div>
     </div>
                       </div>
 
                     </CardContent>
                 </PageContainer>
+<div className="mt-6">
+  <Card>
+    <CardHeader>
+      <CardTitle>Guide Languages & Prices</CardTitle>
+    </CardHeader>
 
+    <CardContent>
+      <table className="w-full border">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left p-2">Language</th>
+            <th className="text-left p-2">Price</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {fields.map((field, index) => (
+<tr key={field.id} className="border-b">
+  <td className="p-2">{field.name}</td>
+
+  <td className="p-2">
+    <input
+      type="number"
+      {...register(`languages.${index}.price`)}
+      defaultValue={field.price || 0}
+      className="border px-2 py-1 w-32"
+    />
+  </td>
+</tr>
+          ))}
+        </tbody>
+      </table>
+    </CardContent>
+  </Card>
+</div>
                 {/* ✅ Submit Button Section (replaced Stack + LoadingButton) */}
                 <div className="flex justify-end">
                   <Button type="submit" disabled={btnLoading}>

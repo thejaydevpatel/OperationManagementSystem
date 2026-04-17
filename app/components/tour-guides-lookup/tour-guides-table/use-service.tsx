@@ -79,35 +79,39 @@ const dropdownEndpoints: Record<string, string | null> = {
 };
 
   const api = getTourGuidesTableEntityApi(module);
-
  
-  // const customResolver: Resolver<TourGuidesTableEntity> = async (
-  //     values,
-  //     _context,
-  //     options
-  //   ) => {
-  //     const isEdit = !!editId;
-  //     const schema = getSchema(isEdit); // <- dynamic!
-  //     return zodResolver(schema)(values, undefined, options);
-  //   };
 
+  type FormValues = {
+  name: string;
+  phone: string;
+  supplier_id?: number;
+  guide_status_id: number;
+  notes?: string;
 
-  const {
-    control,
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<TourGuidesTableEntity>({
- defaultValues: {
-  name: "",
-  phone: "",
-  notes: "",
-},  
-    // resolver: zodResolver(getSchema(false)),
-      // defaultValues:{"name":"","phone":""}
-  });
+  languages: {
+    language_id: number;
+    name: string;
+    price: number;
+  }[];
+};
+
+const {
+  control,
+  register,
+  handleSubmit,
+  reset,
+  setValue,
+  formState: { errors },
+} = useForm<FormValues>({
+  defaultValues: {
+    name: "",
+    phone: "",
+    supplier_id: undefined,
+    guide_status_id: 0,
+    notes: "",
+    languages: [], // 🔥 VERY IMPORTANT
+  },
+});
 
   //  useUnsavedChangesWarning(isDirty);
 
@@ -180,11 +184,7 @@ const dropdownEndpoints: Record<string, string | null> = {
 
       const response = await api.fetchAll(query);
       setList(response.data);
-      setTotalRecordObj(response.pagination);
-
-      // updateUrl({ page, pageSize: rowsPerPage, sortBy: sortBy, order });
-      // setPage(response.pagination.page - 1);
-
+      setTotalRecordObj(response.pagination); 
 
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -216,7 +216,7 @@ const dropdownEndpoints: Record<string, string | null> = {
     }, [page, rowsPerPage, sortBy, order, module]);
 
    
-  const onSubmit: SubmitHandler<TourGuidesTableEntity> = async (values) => {
+  const onSubmit: SubmitHandler<FormValues> = async (values) => {
     // ✅ Validation
   
   if (values.name === undefined || values.name === null) {
@@ -227,12 +227,7 @@ const dropdownEndpoints: Record<string, string | null> = {
   if (values.phone === undefined || values.phone === null) {
     toast.error("phone is required");
     return;
-  }
-
-  if (values.language_id === undefined || values.language_id === null) {
-    toast.error("language_id is required");
-    return;
-  }
+  } 
 
   if (values.guide_status_id === undefined || values.guide_status_id === null) {
     toast.error("guide_status_id is required");
@@ -240,25 +235,7 @@ const dropdownEndpoints: Record<string, string | null> = {
   }
   
    setBtnLoading(true);
-    const data = { ...values };
-    // let response;
-    // if (editId) {
-    //   response = await api.update(editId, data);
-    // } else {
-    //   response = await api.create(data);
-    // }
-     
-    // if (
-    //   response.status == HttpStatusText[HttpStatus.CREATED] ||
-    //   response.status == HttpStatusText[HttpStatus.OK]
-    // ) {
-    //   toast.success(response.message);
-    //   await handleImageUploads(values, editId > 0 ? editId : response.data);
-    //   await nevigateListOrEdit(true);
-    // } else {
-    //   toast.error(response.message);
-    //  setBtnLoading(false);
-    // }
+    const data = { ...values }; 
     let recordId: number;
 
 if (editId) {
@@ -327,6 +304,7 @@ await nevigateListOrEdit(true);
       });
       reset(remapped);
       setEditId(Id);
+      console.log("FULL RECORD:", record);
     } else {
       // toast.error(response.message);
     }

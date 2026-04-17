@@ -9,7 +9,13 @@ import { useDebounce } from "@/hooks/use-debounce";
  
 import { useSearchParams } from "next/navigation";
  import { Switch } from "@/components/ui/switch";
-
+import { exportToExcel } from "@/utils/exportToExcel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectTrigger,
@@ -284,7 +290,30 @@ React.useEffect(() => {
     setList(updatedRows);
   };
 
+const handleExport = () => {
+  const exportData = filteredRows.map((row, index) => ({
+    "Sr No.": index + 1,
+    "Supplier Type":
+      supplier_type.find(o => Number(o.id) === Number(row.supplier_type))?.name || "-",
+    "Supplier":
+      supplier_id.find(o => Number(o.id) === Number(row.supplier_id))?.name || "-",
+    "Name": row.name || "-",
+    "Phone": row.phone || "-",
+    "License Number": row.license_number || "-",
+    "Driver Status":
+      driver_status_id.find(o => Number(o.id) === Number(row.driver_status_id))?.name || "-",
+    "Last Known Location":
+      last_known_location_id.find(o => Number(o.id) === Number(row.last_known_location_id))?.name || "-",
+    "Last Duty End Time": row.last_duty_end_time
+      ? new Date(row.last_duty_end_time).toLocaleString("en-GB")
+      : "-",
+    "Max Daily Hours": row.max_daily_hours || "-",
+    "Notes": row.notes || "-",
+    "Status": row.is_active ? "Active" : "Suspended",
+  }));
 
+  exportToExcel(exportData, "Drivers_Table");
+};
   
 const filteredRows = rows.filter((row) => {
   if (statusFilter === "active" && !row.is_active) return false;
@@ -325,8 +354,19 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+          <TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 

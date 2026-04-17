@@ -6,9 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useDebounce } from "@/hooks/use-debounce";
- 
+//  import * as XLSX from "xlsx";
+// import { saveAs } from "file-saver";
 import { useSearchParams } from "next/navigation";
- import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch";
 
 import {
   Select,
@@ -51,7 +52,13 @@ import { ModuleDetailsString } from "@/app/(DashboardLayout)/types/module-detail
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/StatusBadge";
-
+import { exportToExcel } from "@/utils/exportToExcel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   ChevronsLeft,
   ChevronLeft,
@@ -242,6 +249,20 @@ React.useEffect(() => {
     setList(updatedRows);
   };
 
+const handleExport = () => {
+  const exportData = filteredRows.map((row, index) => ({
+    "Sr No": index + 1,
+    "Status Id":
+      status_master_id.find(o => Number(o.id) === Number(row.status_master_id))?.name || "",
+    "Name": row.name,
+    "Status Code": row.status_code,
+    "Sequence Order": row.sequence_order,
+    "Color Code": row.color_code,
+    "Status": row.is_active ? "Active" : "Suspended",
+  }));
+
+  exportToExcel(exportData, "Status_Master_Table", "Status Master");
+};
 
   
 const filteredRows = rows.filter((row) => {
@@ -283,8 +304,19 @@ const filteredRows = rows.filter((row) => {
                 </Link>
 
         <div className="flex gap-2">
-          <Button variant="outline">Export</Button>
-          <Button variant="outline">Import</Button>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline" onClick={handleExport}>
+        Export
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      Export as Excel
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+          {/* <Button variant="outline">Import</Button> */}
         </div>
       </div>
 
@@ -449,7 +481,7 @@ const filteredRows = rows.filter((row) => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6">
+                      <TableCell colSpan={5} className="text-end mr-0 py-6">
                         No records found
                         <div className="mt-2">
                           <Button
